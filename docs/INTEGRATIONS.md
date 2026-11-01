@@ -139,10 +139,11 @@ base URL and model come from the environment, so Ollama, OpenRouter,
 OpenWebUI, and the Meta Model API all use the same code, the same
 scrubber-before-send rule, and the same 5-call-per-process budget.
 The defaults are the Meta Model API. Only the key changes hands:
-whatever endpoint you point at, its API key goes in the
+whatever remote endpoint you point at, its API key goes in the
 `META_API_KEY` environment variable (the name is historical — when
 the base URL is overridden, the value is sent only to that
-endpoint, never to Meta). Fake clients stay the default: nothing
+endpoint, never to Meta). Loopback endpoints need no key at all
+(see Ollama below). Fake clients stay the default: nothing
 here makes a live call unless `HIVE_MIND_LIVE=1` is set in the
 shell for that run.
 
@@ -156,6 +157,11 @@ export HIVE_MIND_LIVE=1
 export HIVE_MIND_META_BASE_URL=http://localhost:11434/v1
 export HIVE_MIND_META_MODEL=gemma3:4b
 ```
+
+No `META_API_KEY` is needed for a loopback base URL (Block 15):
+with no key set, the client sends no `Authorization` header to
+`localhost` / `127.x.x.x` / `::1`, and a key is still sent if one
+is configured. Remote endpoints refuse without a key.
 
 Verify Ollama itself answers (no key needed for this check):
 

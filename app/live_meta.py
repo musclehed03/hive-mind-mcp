@@ -3,10 +3,11 @@
 This module makes real HTTP calls to the Meta Model API, but only
 when the caller has explicitly opted in: the factory in
 ``app/live_clients.py`` returns this client only when
-``HIVE_MIND_LIVE=1`` and ``META_API_KEY`` is present in the
-environment. Every other path in the codebase uses the fake client
-(``app/fake_meta.py``), and importing this module alone makes no
-network call.
+``HIVE_MIND_LIVE=1``. A missing key refuses every non-loopback
+call with no network attempt; loopback base URLs (Block 15)
+need no key at all. Every other path in the codebase uses the
+fake client (``app/fake_meta.py``), and importing this module
+alone makes no network call.
 
 Rules this client follows, without exception:
 
@@ -14,6 +15,13 @@ Rules this client follows, without exception:
   only. It is never read from a file, never logged, never included
   in a request body or an error message, and never echoed back. The
   only place it appears is the ``Authorization`` header.
+  Exception (Block 15): when the resolved base URL is a loopback
+  address (``localhost``, ``127.0.0.1``, ``::1``, any ``127.x.x.x``),
+  no key is required and no ``Authorization`` header is sent at
+  all — local endpoints such as Ollama accept unauthenticated
+  requests, and an empty ``Bearer `` header is rejected by some
+  servers. For every other base URL a missing key refuses the
+  call with no network attempt, exactly as before.
 * The scrubber (``app/scrubber.py``) runs before any payload is
   sent. If it traps anything, the call is refused and no HTTP
   request is made, and the refusal does not consume call budget.
@@ -44,15 +52,18 @@ OpenAI-compatible root, or the Meta default. The scrubber, the
 5-call budget, and the error-dict contract apply identically to
 every endpoint; only the key the endpoint expects changes, and
 that key is still read from ``META_API_KEY`` in the environment
-only. If an endpoint rejects a field, adjust the configuration
+only — except loopback endpoints, which expect no key (Block 15).
+If an endpoint rejects a field, adjust the configuration
 — do not guess a different API. No other endpoint is called from
 this codebase.
 """
 
+import ipaddress
 import json
 import os
 import threading
 import urllib.error
+import urllib.parse
 import urllib.request
 
 from .scrubber import scrub_before_write
@@ -91,6 +102,32 @@ def reset_live_call_budget():
         _process_calls = 0
 
 
+def _is_loopback_url(url):
+    """True only when ``url`` points at this machine (Block 15).
+
+    The rule is deliberately narrow: the URL's hostname must be
+    ``localhost`` (an optional trailing dot is tolerated) or an IP
+    address in the loopback range (``127.0.0.0/8`` or ``::1``),
+    matched with ``ipaddress`` so lookalike hostnames such as
+    ``localhost.example.com`` or ``127.0.0.1.example.com`` never
+    count. Scheme (http/https) and port do not matter. A URL with
+    no parseable hostname is not loopback.
+    """
+    try:
+        host = urllib.parse.urlparse(url).hostname
+    except ValueError:
+        return False
+    if not host:
+        return False
+    host = host.lower()
+    if host in ("localhost", "localhost."):
+        return True
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
+
+
 class LiveMetaClient:
     """Real Meta Model API client. Same verify()/compress() shapes as
     the fake client, with ``live: True``. ``call_count`` counts live
@@ -127,6 +164,10 @@ class LiveMetaClient:
         if os.environ.get("HIVE_MIND_LIVE_UNSAFE_RAISE_BUDGET") == "1":
             return value
         return DEFAULT_MAX_CALLS
+
+    def _is_loopback(self):
+        """True when this client's base URL is a loopback address."""
+        return _is_loopback_url(self.base_url)
 
     # -- error helpers ---------------------------------------------------
 
@@ -176,14 +217,18 @@ class LiveMetaClient:
             "temperature": 0,
             "max_tokens": max_tokens,
         }).encode("utf-8")
+        # No Authorization header when no key is configured: loopback
+        # endpoints (Block 15) need none, and an empty "Bearer "
+        # header is rejected by some local servers. A configured key
+        # is always sent, loopback or not.
+        headers = {"Content-Type": "application/json"}
+        if self.api_key:
+            headers["Authorization"] = "Bearer " + self.api_key
         request = urllib.request.Request(
             f"{self.base_url}/chat/completions",
             data=body,
             method="POST",
-            headers={
-                "Authorization": "Bearer " + self.api_key,
-                "Content-Type": "application/json",
-            },
+            headers=headers,
         )
         try:
             response = urllib.request.urlopen(request, timeout=30)
@@ -244,7 +289,7 @@ class LiveMetaClient:
         ``reason``. On any refusal or failure the dict carries
         ``verdict: "error"`` and an ``"error"`` message.
         """
-        if not self.api_key:
+        if not self.api_key and not self._is_loopback():
             return {**self._missing_key_error(),
                     "verdict": "error", "pillar_failures": []}
         scrubbed = scrub_before_write(candidate_fact, "standard")
@@ -320,7 +365,7 @@ class LiveMetaClient:
         ``compressed``. On refusal or failure ``compressed`` is ""
         and the dict carries an ``"error"`` message.
         """
-        if not self.api_key:
+        if not self.api_key and not self._is_loopback():
             return {**self._missing_key_error(), "compressed": ""}
         scrubbed = scrub_before_write(text, "standard")
         if scrubbed["trapped_count"] > 0:
