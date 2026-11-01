@@ -32,11 +32,22 @@ def test_no_todo_or_fixme_in_shipped_code():
 
 
 def test_no_polling_or_timers_in_gui():
+    # Revised for fast custom tooltips (standing SOP, ~500ms): the
+    # ONLY timer allowed in the GUI is the single one-shot tooltip
+    # delay in app.js, always paired with clearTimeout. That is not
+    # polling. setInterval stays banned everywhere, and no other
+    # setTimeout may appear. Widening this beyond the one tooltip
+    # delay would weaken the guard.
     for name in ("app.js", "clipper.html"):
         with open(os.path.join(REPO, "gui", name), encoding="utf-8") as f:
             js = f.read()
         assert "setInterval" not in js, name
-        assert "setTimeout" not in js, name
+        if name == "app.js":
+            assert js.count("setTimeout") == 1, "exactly one tooltip delay"
+            assert "TOOLTIP_DELAY_MS = 500" in js
+            assert "clearTimeout" in js
+        else:
+            assert "setTimeout" not in js, name
     with open(os.path.join(REPO, "gui", "app.js"), encoding="utf-8") as f:
         assert "requestAnimationFrame" in f.read()
 

@@ -28,8 +28,30 @@
     snapshot_schedule: "7d", backup_destination: "supabase",
     token_budget: 200, reading_level: "plain", microbot_mode: "simple",
     palette_choice: "posh", sound: false, notifications: false,
+    tooltips_enabled: true,
     active_profile: ""
   };
+  /* Accessibility keys vs. everything else: "Reset accessibility
+     settings" and applying/toggling a profile must only ever touch
+     the accessibility keys. Regular Settings (graph, snapshot,
+     token budget, sound, notifications, tooltips) survive a reset
+     and survive profile changes. tooltips_enabled is a Regular
+     Setting, so it is deliberately NOT in this list. */
+  var ACCESSIBILITY_KEYS = [
+    "focus_mode", "safe_motion", "readable_font", "high_contrast",
+    "light_theme", "simplified", "bold", "underline_links",
+    "focus_outline", "reading_guide", "large_cursor",
+    "colorblind_palette", "text_scale", "line_height",
+    "letter_spacing_em", "saturation", "active_profile"
+  ];
+  function resetAccessibilityState() {
+    var kept = {};
+    Object.keys(DEFAULTS).forEach(function (key) {
+      if (ACCESSIBILITY_KEYS.indexOf(key) === -1) kept[key] = state[key];
+    });
+    state = Object.assign({}, DEFAULTS, kept);
+    state.active_profile = "";
+  }
   var state = loadSettings();
 
   function loadSettings() {
@@ -156,6 +178,8 @@
     if (sound) { sound.setAttribute("aria-pressed", state.sound ? "true" : "false"); sound.textContent = "Sound: " + (state.sound ? "on" : "off"); }
     var notif = document.getElementById("toggle-notifications");
     if (notif) { notif.setAttribute("aria-pressed", state.notifications ? "true" : "false"); notif.textContent = "Notifications: " + (state.notifications ? "on" : "off"); }
+    var tt = document.getElementById("toggle-tooltips");
+    if (tt) { tt.setAttribute("aria-pressed", state.tooltips_enabled ? "true" : "false"); tt.textContent = "Tooltips: " + (state.tooltips_enabled ? "on" : "off"); }
     var slider = document.getElementById("microbot-slider-button");
     if (slider) slider.textContent = "Micro-bot: " + (state.microbot_mode === "pro" ? "Pro Mode" : "Simple Mode");
   }
@@ -163,13 +187,93 @@
   function applyProfile(name) {
     var presets = window.HIVEMIND_PRESETS || {};
     if (state.active_profile === name) {
-      state = Object.assign({}, DEFAULTS);
-      state.active_profile = "";
+      resetAccessibilityState();
     } else if (presets[name]) {
-      state = Object.assign({}, DEFAULTS, presets[name].settings, {active_profile: name});
+      resetAccessibilityState();
+      state = Object.assign({}, state, presets[name].settings, {active_profile: name});
     }
     applySettings();
     renderGraph();
+  }
+
+  /* Fast custom tooltips (standing SOP: ~500ms, snap up, no slow
+     native title delay). One shared element, styled with the same
+     CSS variables as the page so it follows every palette, including
+     grayscale and high contrast. No fade-in animation: the tip
+     appears the instant the delay elapses. Shows after 500ms on
+     hover AND on keyboard focus (touch: a tap focuses the control,
+     so the tip shows there too). Hides at once on mouseleave, blur,
+     Escape, scroll, and resize. Content comes from data-tooltip;
+     there are no title attributes left, so the slow native tooltip
+     can never double-show, on or off. When tooltips are off
+     (Regular Settings), nothing ever shows. */
+  var TOOLTIP_DELAY_MS = 500;
+  var tooltipTimer = null;
+  var tooltipTarget = null;
+  function tooltipElement() {
+    return document.getElementById("hivemind-tooltip");
+  }
+  function hideTooltip() {
+    if (tooltipTimer) { clearTimeout(tooltipTimer); tooltipTimer = null; }
+    tooltipTarget = null;
+    var tip = tooltipElement();
+    if (tip) tip.hidden = true;
+  }
+  function positionTooltip(target) {
+    var tip = tooltipElement();
+    if (!tip) return;
+    var rect = target.getBoundingClientRect();
+    var gap = 8;
+    var tipWidth = tip.offsetWidth, tipHeight = tip.offsetHeight;
+    var maxLeft = Math.max(8, window.innerWidth - tipWidth - gap);
+    var left = Math.min(Math.max(8, rect.left + (rect.width - tipWidth) / 2), maxLeft);
+    var top = rect.top - tipHeight - gap;
+    if (top < 8) top = rect.bottom + gap;
+    if (top + tipHeight > window.innerHeight - gap) {
+      top = Math.max(8, window.innerHeight - tipHeight - gap);
+    }
+    tip.style.left = left + "px";
+    tip.style.top = top + "px";
+  }
+  function showTooltip(target) {
+    if (!state.tooltips_enabled) return;
+    var text = target.getAttribute("data-tooltip");
+    if (!text) return;
+    var tip = tooltipElement();
+    if (!tip) return;
+    tooltipTarget = target;
+    tip.textContent = text;
+    tip.hidden = false;
+    /* Measure while invisible so the first paint is already in
+       the right place: no jump, no flash in the wrong spot. */
+    tip.style.visibility = "hidden";
+    positionTooltip(target);
+    tip.style.visibility = "";
+  }
+  function scheduleTooltip(target) {
+    hideTooltip();
+    if (!state.tooltips_enabled) return;
+    tooltipTimer = setTimeout(function () {
+      tooltipTimer = null;
+      showTooltip(target);
+    }, TOOLTIP_DELAY_MS);
+  }
+  function bindTooltips() {
+    document.querySelectorAll("[data-tooltip]").forEach(function (el) {
+      el.addEventListener("mouseenter", function () { scheduleTooltip(el); });
+      el.addEventListener("mouseleave", hideTooltip);
+      el.addEventListener("focus", function () { scheduleTooltip(el); });
+      el.addEventListener("blur", hideTooltip);
+      /* A select's own dropdown opens on click; hide the tip so it
+         never sits on top of the open list. Buttons and sliders
+         keep the tip until the pointer/keyboard leaves them. */
+      if (el.tagName === "SELECT") el.addEventListener("click", hideTooltip);
+    });
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape") hideTooltip();
+    });
+    window.addEventListener("scroll", hideTooltip, true);
+    window.addEventListener("resize", hideTooltip);
   }
 
   function bindControls() {
@@ -201,7 +305,10 @@
     var sat = document.getElementById("saturation");
     bindRange(sat, function () { state.saturation = clamp(Number(sat.value), 0, 100); state.active_profile = ""; applySettings(); });
     var reset = document.getElementById("reset-settings");
-    if (reset) reset.addEventListener("click", function () { state = Object.assign({}, DEFAULTS); try { localStorage.removeItem(STORAGE_KEY); } catch (e) {} applySettings(); renderGraph(); });
+    /* Reset covers accessibility keys only. Regular Settings —
+       including the tooltips on/off switch — survive it. The saved
+       settings are rewritten by applySettings(), not wiped. */
+    if (reset) reset.addEventListener("click", function () { resetAccessibilityState(); applySettings(); renderGraph(); });
     var metaphor = document.getElementById("metaphor-select");
     if (metaphor) metaphor.addEventListener("change", function () { state.metaphor = metaphor.value; applySettings(); renderGraph(); });
     var density = document.getElementById("graph-density");
@@ -222,6 +329,12 @@
     if (sound) sound.addEventListener("click", function () { state.sound = !state.sound; applySettings(); });
     var notif = document.getElementById("toggle-notifications");
     if (notif) notif.addEventListener("click", function () { state.notifications = !state.notifications; applySettings(); });
+    var tt = document.getElementById("toggle-tooltips");
+    if (tt) tt.addEventListener("click", function () {
+      state.tooltips_enabled = !state.tooltips_enabled;
+      applySettings();
+      if (!state.tooltips_enabled) hideTooltip();
+    });
     var slider = document.getElementById("microbot-slider-button");
     if (slider) slider.addEventListener("click", function () {
       state.microbot_mode = state.microbot_mode === "pro" ? "simple" : "pro"; applySettings();
@@ -375,8 +488,10 @@
   document.addEventListener("DOMContentLoaded", function () {
     applySettings();
     bindControls();
+    bindTooltips();
     loadData();
   });
   // Exposed for tests/debugging in the browser console only.
-  window.HIVEMIND_GUI = {applySettings: applySettings, getState: function () { return state; }};
+  window.HIVEMIND_GUI = {applySettings: applySettings, getState: function () { return state; },
+    showTooltip: showTooltip, hideTooltip: hideTooltip, tooltipDelayMs: TOOLTIP_DELAY_MS};
 })();

@@ -405,19 +405,90 @@ def test_other_palettes_unchanged():
                 palettes[name]["accent"]) == (bg, text, accent), name
 
 
-def test_every_control_has_plain_language_title(parsed):
-    # Every button, select, and range input carries a one-sentence,
-    # plain-words title (a hover tip). Aria-labels are untouched;
-    # title is additive. No jargon: no tool, service, or file names.
+def test_every_control_has_plain_language_data_tooltip(parsed):
+    # Mechanism changed (fast custom tooltips, standing SOP): the
+    # plain-words texts moved verbatim from slow native `title`
+    # attributes to `data-tooltip` attributes, and NO control may
+    # carry a `title` attribute — the browser-controlled native tip
+    # would double-show and is too slow. Content is unchanged;
+    # aria-labels are untouched. No jargon: no tool, service, or
+    # file names.
+    html = _read("index.html")
+    assert ' title="' not in html, "a native title attribute survives"
     for tag, attrs in parsed.tags:
         if tag in ("button", "select", "input"):
-            title = attrs.get("title", "")
-            assert len(title) >= 15, (tag, attrs.get("id"), title)
-            assert not any(word in title for word in
-                           ("MCP", "Supabase", "API", "JSON", "SQLite", "stdio")), title
+            tip = attrs.get("data-tooltip", "")
+            assert len(tip) >= 15, (tag, attrs.get("id"), tip)
+            assert not any(word in tip for word in
+                           ("MCP", "Supabase", "API", "JSON", "SQLite", "stdio")), tip
+    assert 'data-tooltip="Choose how often a backup copy of your memories is made."' in html
+    assert 'data-tooltip="Set how much work the app may do when it answers.' in html
+    # The tooltip toggle itself has a tip, like every other control.
+    assert 'id="toggle-tooltips"' in html
+
+
+def test_custom_tooltip_element_timing_and_hiding():
+    # One shared tooltip element in the page (role="tooltip"), a
+    # 500ms delay in app.js, and hiding on mouseleave, blur, Escape,
+    # and scroll. No fade-in: the tooltip CSS rule must carry no
+    # transition/animation, and the tooltip must use the page's CSS
+    # variables so it follows palettes, grayscale, and high contrast.
     html = _read("index.html")
-    assert 'title="Choose how often a backup copy of your memories is made."' in html
-    assert 'title="Set how much work the app may do when it answers.' in html
+    assert 'id="hivemind-tooltip"' in html
+    assert 'role="tooltip"' in html
+    js = _read("app.js")
+    assert "TOOLTIP_DELAY_MS = 500" in js
+    assert "setTimeout" in js and "TOOLTIP_DELAY_MS" in js
+    for trigger in ("mouseleave", "blur", "Escape", "scroll"):
+        assert trigger in js, trigger
+    assert "data-tooltip" in js
+    assert "hideTooltip" in js and "showTooltip" in js
+    css = _read("styles.css")
+    match = re.search(r"#hivemind-tooltip\s*\{([^}]*)\}", css)
+    assert match, "tooltip CSS rule missing"
+    rule = match.group(1)
+    assert "var(--bg)" in rule and "var(--text)" in rule
+    assert "var(--border)" in rule or "var(--accent)" in rule
+    assert "transition" not in rule and "animation" not in rule
+    assert "pointer-events: none" in rule
+
+
+def test_tooltip_toggle_in_regular_settings(parsed):
+    # The overall tooltips on/off switch lives in Regular Settings
+    # (a product preference, not an access need), defaults ON,
+    # persists in the same localStorage settings object, and takes
+    # effect immediately. It must NOT be in the Accessibility Suite.
+    assert "toggle-tooltips" in parsed.regular_ids
+    assert "toggle-tooltips" not in parsed.accessibility_ids
+    js = _read("app.js")
+    assert "tooltips_enabled: true" in js, "default must be on"
+    assert "toggle-tooltips" in js
+    assert "tooltips_enabled" in js
+    # The toggle is synced like the other Regular Settings controls
+    # and its click handler flips the persisted state.
+    assert 'getElementById("toggle-tooltips")' in js
+
+
+def test_reset_preserves_regular_settings_including_tooltips():
+    # Reset accessibility settings must scope to accessibility keys
+    # only: Regular Settings values — snapshot schedule, token
+    # budget, sound, notifications, and tooltips_enabled — survive
+    # it. The old code reset the whole object and wiped localStorage.
+    js = _read("app.js")
+    assert "ACCESSIBILITY_KEYS" in js
+    assert "resetAccessibilityState" in js
+    start = js.index("var ACCESSIBILITY_KEYS")
+    end = js.index("];", start)
+    keys_block = js[start:end]
+    assert "tooltips_enabled" not in keys_block
+    assert "colorblind_palette" in keys_block
+    assert "token_budget" not in keys_block
+    # The reset click handler uses the scoped reset, not a whole
+    # object reset or a storage wipe.
+    reset_at = js.index('getElementById("reset-settings")')
+    reset_block = js[reset_at:reset_at + 600]
+    assert "resetAccessibilityState" in reset_block
+    assert "removeItem" not in reset_block
 
 
 def test_plain_language_guide_exists(parsed):

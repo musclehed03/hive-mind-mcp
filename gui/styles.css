@@ -59,6 +59,21 @@ canvas, svg.graph { width: 100%; height: 320px; display: block; }
 canvas { background: var(--bg); }
 #reading-guide { position: fixed; left: 0; right: 0; height: 2em; background: rgba(200, 109, 215, 0.25); border-top: 2px solid var(--accent); border-bottom: 2px solid var(--accent); pointer-events: none; display: none; z-index: 50; }
 body.reading-guide #reading-guide { display: block; }
+/* Fast custom tooltip (standing SOP: ~500ms, snap up). One shared
+   element, positioned by app.js. It uses the page's own CSS
+   variables, so it follows every palette — including pure
+   grayscale and high contrast — and stays readable there. No
+   fade-in or other animation: it appears the instant the delay
+   elapses. pointer-events: none so it can never block a click. */
+#hivemind-tooltip {
+  position: fixed; z-index: 100; max-width: 320px;
+  background: var(--bg); color: var(--text);
+  border: 2px solid var(--accent); padding: 8px 12px;
+  font: inherit; font-size: calc(16px * var(--font-scale));
+  line-height: var(--line-height);
+  pointer-events: none;
+}
+#hivemind-tooltip[hidden] { display: none; }
 #diff-toast { border: 2px dashed var(--accent); padding: 8px; margin: 12px; }
 #token-meter { border: 2px dotted var(--border); padding: 8px; margin: 12px; }
 .node-list { columns: 2; }
