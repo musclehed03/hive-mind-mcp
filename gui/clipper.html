@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hive-Mind Web Clipper</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main>
+  <h1>Hive-Mind Web Clipper</h1>
+  <p>Build a capture payload for <code>hivemind_capture_idea</code>. Nothing is sent anywhere from this page — copy the payload and paste it into your MCP client. The Burn-After-Reading scrubber runs before anything is stored.</p>
+  <form id="clipper-form" aria-label="Web clipper">
+    <label for="clip-url">Page URL</label>
+    <input id="clip-url" name="url" type="url" autocomplete="off">
+    <label for="clip-title">Page title</label>
+    <input id="clip-title" name="title" type="text" autocomplete="off">
+    <label for="clip-text">Selected text or note</label>
+    <textarea id="clip-text" name="text" rows="6"></textarea>
+    <label for="clip-domain">Domain hint (optional)</label>
+    <input id="clip-domain" name="domain" type="text" autocomplete="off" placeholder="e.g. coding">
+    <button type="button" id="build-payload" aria-label="Build capture payload">Build capture payload</button>
+  </form>
+  <label for="payload-output">Capture payload</label>
+  <textarea id="payload-output" rows="8" readonly aria-label="Capture payload, read only"></textarea>
+  <button type="button" id="copy-payload" aria-label="Copy capture payload">Copy payload</button>
+  <p id="clipper-status" role="status" aria-live="polite"></p>
+  <img src="logo.svg" alt="Hive-Mind logo: a star with orbiting memory nodes">
+</main>
+<script>
+(function () {
+  var params = new URLSearchParams(location.search);
+  function set(id, value) { var el = document.getElementById(id); if (value) el.value = value; }
+  set("clip-url", params.get("url"));
+  set("clip-title", params.get("title"));
+  set("clip-text", params.get("text"));
+  document.getElementById("build-payload").addEventListener("click", function () {
+    var url = document.getElementById("clip-url").value.trim();
+    var text = document.getElementById("clip-text").value.trim();
+    var title = document.getElementById("clip-title").value.trim();
+    var body = text || title;
+    var payload = "URL: " + url + "\n\n" + body;
+    document.getElementById("payload-output").value = payload;
+    document.getElementById("clipper-status").textContent = "Payload built. Copy it into hivemind_capture_idea.";
+  });
+  document.getElementById("copy-payload").addEventListener("click", function () {
+    var out = document.getElementById("payload-output");
+    out.select();
+    document.execCommand("copy");
+    document.getElementById("clipper-status").textContent = "Payload copied.";
+  });
+})();
+</script>
+</body>
+</html>

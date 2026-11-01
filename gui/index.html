@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hive-Mind — Never Restate Yourself</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="reading-guide" aria-hidden="true"></div>
+<header>
+  <img src="logo.svg" alt="Hive-Mind logo: a house-shaped star" width="48" height="48">
+  <h1>Hive-Mind</h1>
+  <p>One memory layer every client shares. Nothing ever has to be restated.</p>
+  <p class="distraction">Demo build: local-first, fake Meta client only. Live gates are unverified until Sonja runs them.</p>
+</header>
+
+<main>
+  <section aria-label="Knowledge graph">
+    <h2>Knowledge graph</h2>
+    <label for="metaphor-select">Graph view (Regular Setting):</label>
+    <select id="metaphor-select" aria-label="Graph view: nebula, tree of life, spherical mandala, or mythical road map">
+      <option value="nebula">Cosmic Nebula (Birth of a Star)</option>
+      <option value="tree">Tree of Life</option>
+      <option value="mandala">Spherical Mandala</option>
+      <option value="roadmap">Mythical Literary Road Map</option>
+    </select>
+    <div class="graph-wrap">
+      <canvas id="graph-canvas" role="img" aria-label="Knowledge graph canvas: nodes are drawn as circles, squares, and triangles by domain, with solid, dashed, and dotted lines for relationships. A text list of all nodes follows."></canvas>
+      <svg class="graph" id="graph-svg" role="img" aria-label="Knowledge graph, alternate view" style="display:none"><title>Knowledge graph, alternate view</title><g id="svg-nodes"></g></svg>
+    </div>
+    <p id="graph-status" aria-live="polite">Loading graph data…</p>
+    <h3>All memories, as text</h3>
+    <ul id="node-list" class="node-list" aria-label="All memories in the graph"></ul>
+    <div id="token-meter" aria-live="polite">Token Ekonomi Meter: no query yet.</div>
+    <div id="diff-toast" aria-live="polite">No changes yet. A superseded fact will appear here as: - old fact / + new fact [Attested].</div>
+    <button id="refresh-button" type="button" aria-label="Refresh graph data">Refresh graph</button>
+    <button id="read-aloud-button" type="button" aria-label="Read the graph memories aloud">Read aloud</button>
+    <button id="microbot-slider-button" type="button" aria-label="Micro-bot mode slider: Simple Mode to Pro Mode">Micro-bot: Simple Mode</button>
+  </section>
+
+  <section class="accessibility" id="accessibility-suite" aria-label="Accessibility Suite">
+    <h2>Accessibility Suite</h2>
+    <p>One-tap profiles first; finer controls underneath. Profiles never lock you out of the individual controls.</p>
+    <div role="group" aria-label="One-tap accessibility profiles">
+      <button type="button" class="profile-button" data-profile="dyslexia" aria-pressed="false" aria-label="Dyslexia profile">Dyslexia</button>
+      <button type="button" class="profile-button" data-profile="adhd_focus" aria-pressed="false" aria-label="ADHD and focus profile">ADHD / Focus</button>
+      <button type="button" class="profile-button" data-profile="vision_impaired" aria-pressed="false" aria-label="Vision impaired profile">Vision Impaired</button>
+      <button type="button" class="profile-button" data-profile="seizure_safe" aria-pressed="false" aria-label="Seizure safe profile">Seizure Safe</button>
+      <button type="button" class="profile-button" data-profile="achromatopsia" aria-pressed="false" aria-label="Achromatopsia profile, pure grayscale">Achromatopsia</button>
+    </div>
+    <h3>Sensory Suite toggles</h3>
+    <button type="button" id="toggle-focus" aria-pressed="false" aria-label="Focus Mode: hide distractions">Focus Mode</button>
+    <button type="button" id="toggle-motion" aria-pressed="false" aria-label="Safe Motion: stop animations">Safe Motion</button>
+    <button type="button" id="toggle-font" aria-pressed="false" aria-label="Readable Font">Readable Font</button>
+    <button type="button" id="toggle-contrast" aria-pressed="false" aria-label="High Contrast">High Contrast</button>
+    <button type="button" id="toggle-light" aria-pressed="false" aria-label="Light Theme">Light Theme</button>
+    <button type="button" id="toggle-simplified" aria-pressed="false" aria-label="Simplified View: hide images">Simplified View</button>
+    <button type="button" id="toggle-bold" aria-pressed="false" aria-label="Bold text">Bold Text</button>
+    <button type="button" id="toggle-underline" aria-pressed="false" aria-label="Underline all links">Underline Links</button>
+    <button type="button" id="toggle-focus-outline" aria-pressed="false" aria-label="Strong keyboard focus outline">Strong Focus Outline</button>
+    <button type="button" id="toggle-guide" aria-pressed="false" aria-label="Reading guide ruler">Reading Guide</button>
+    <button type="button" id="toggle-cursor" aria-pressed="false" aria-label="Larger cursor">Larger Cursor</button>
+    <label for="palette-select">Colour-blind palette:</label>
+    <select id="palette-select" aria-label="Colour-blind palette, including pure grayscale achromatopsia">
+      <option value="default">Default (Deluxe Posh)</option>
+      <option value="deuteranomaly">Deuteranomaly</option>
+      <option value="protanomaly">Protanomaly</option>
+      <option value="deuteranopia">Deuteranopia</option>
+      <option value="protanopia">Protanopia</option>
+      <option value="tritanomaly">Tritanomaly</option>
+      <option value="tritanopia">Tritanopia</option>
+      <option value="achromatopsia">Achromatopsia (pure grayscale)</option>
+    </select>
+    <h3>Text and spacing</h3>
+    <label for="text-size">Text size: <span id="text-size-value">100%</span></label>
+    <input id="text-size" type="range" min="80" max="200" step="5" value="100" aria-label="Text size, 80 to 200 percent">
+    <label for="line-spacing">Line spacing: <span id="line-spacing-value">1.5</span></label>
+    <input id="line-spacing" type="range" min="1.0" max="2.0" step="0.1" value="1.5" aria-label="Line spacing, 1.0 to 2.0">
+    <label for="letter-spacing">Letter spacing: <span id="letter-spacing-value">0.02em</span> (moderate default; too wide breaks letter grouping)</label>
+    <input id="letter-spacing" type="range" min="-0.02" max="0.12" step="0.01" value="0.02" aria-label="Letter spacing, minus 0.02 to 0.12 em">
+    <label for="saturation">Colour saturation: <span id="saturation-value">100%</span></label>
+    <input id="saturation" type="range" min="0" max="100" step="5" value="100" aria-label="Colour saturation, 0 to 100 percent, 0 is monochrome">
+    <button type="button" id="reset-settings" aria-label="Reset all accessibility settings to defaults">Reset accessibility settings</button>
+  </section>
+
+  <section class="regular" id="regular-settings" aria-label="Regular settings">
+    <h2>Regular Settings</h2>
+    <p>These are product preferences, not access needs. They live here, not in the Accessibility Suite.</p>
+    <label for="graph-density">Graph density:</label>
+    <select id="graph-density" aria-label="Graph density: sparse, balanced, or dense">
+      <option value="sparse">Sparse</option>
+      <option value="balanced" selected>Balanced</option>
+      <option value="dense">Dense</option>
+    </select>
+    <label for="snapshot-schedule">Snapshot schedule:</label>
+    <select id="snapshot-schedule" aria-label="Snapshot schedule">
+      <option value="7d" selected>Every 7 days</option>
+      <option value="1d">Daily</option>
+      <option value="30d">Every 30 days</option>
+      <option value="now">Manual (Sync Now only)</option>
+    </select>
+    <label for="backup-destination">Backup destination:</label>
+    <select id="backup-destination" aria-label="Backup destination: Supabase or Google Drive">
+      <option value="supabase" selected>Supabase</option>
+      <option value="drive">Google Drive</option>
+    </select>
+    <label for="token-budget">Default token budget: <span id="token-budget-value">200</span></label>
+    <input id="token-budget" type="range" min="50" max="1000" step="50" value="200" aria-label="Default token budget, 50 to 1000">
+    <label for="reading-level">Explainer reading level:</label>
+    <select id="reading-level" aria-label="Explainer reading level">
+      <option value="plain" selected>Plain</option>
+      <option value="detailed">Detailed</option>
+    </select>
+    <label for="microbot-mode">Micro-bot mode:</label>
+    <select id="microbot-mode" aria-label="Micro-bot mode: Simple or Pro">
+      <option value="simple" selected>Simple Mode (Morning Digest)</option>
+      <option value="pro">Pro Mode (Allowance-Gated Sentinel)</option>
+    </select>
+    <label for="palette-choice">Brand palette:</label>
+    <select id="palette-choice" aria-label="Brand palette selection">
+      <option value="posh" selected>Deluxe Posh</option>
+      <option value="posh-light">Deluxe Posh Light</option>
+    </select>
+    <button type="button" id="toggle-sound" aria-pressed="false" aria-label="Sound effects on or off">Sound: off</button>
+    <button type="button" id="toggle-notifications" aria-pressed="false" aria-label="Notifications on or off">Notifications: off</button>
+  </section>
+</main>
+<footer>
+  <p>Hive-Mind demo GUI. Every graph node is also listed as text above, so no information is carried by colour or shape alone in the accessible list.</p>
+  <img src="logo.svg" alt="" width="24" height="24" aria-hidden="true">
+</footer>
+<script src="settings-data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

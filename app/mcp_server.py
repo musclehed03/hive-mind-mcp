@@ -27,7 +27,8 @@ import json
 import sys
 
 from .config import SERVER_NAME, VERSION
-from .tools import TOOLS, get_tool, not_implemented
+from .dispatch import dispatch_tool
+from .tools import TOOLS, get_tool
 
 _SCALAR_TYPES = (str, int, float, bool, type(None))
 
@@ -93,10 +94,10 @@ def handle_request(request):
                 request_id, -32602,
                 f"missing required argument(s): {', '.join(missing)}",
             )
-        payload = not_implemented(name)
+        payload, is_error = dispatch_tool(name, arguments)
         return _result(request_id, {
             "content": [{"type": "text", "text": json.dumps(payload)}],
-            "isError": False,
+            "isError": is_error,
         })
     if is_notification:
         return None

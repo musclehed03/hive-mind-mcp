@@ -1,0 +1,50 @@
+/* Hive-Mind GUI styles. 2px borders carry hierarchy: solid = primary
+   frames, dashed = secondary tags/links, dotted = tertiary controls.
+   Meaning is never carried by colour alone: shapes + line styles do
+   that work, so the pure-grayscale mode keeps full hierarchy. */
+:root {
+  --bg: #14101c; --text: #f5edf7; --accent: #c86dd7; --border: #3a2e4a;
+  --node: #2a2138; --edge: #8e7aa8;
+  --font-scale: 1; --line-height: 1.5; --letter-spacing: 0.02em;
+  --saturation: 100%;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font-family: system-ui, sans-serif;
+  font-size: calc(16px * var(--font-scale));
+  line-height: var(--line-height); letter-spacing: var(--letter-spacing);
+}
+body.light-theme { --bg: #faf7fb; --text: #1a1424; --node: #ffffff; --border: #6b5a80; }
+body.high-contrast { --bg: #000000; --text: #ffffff; --accent: #ffd400; --border: #ffffff; --edge: #ffffff; }
+body.readable-font { font-family: "Atkinson Hyperlegible", Verdana, sans-serif; }
+body.bold-text { font-weight: 700; }
+body.focus-mode .distraction { display: none; }
+body.safe-motion *, body.safe-motion *::before, body.safe-motion *::after {
+  animation: none !important; transition: none !important;
+}
+body.simplified img, body.simplified .decorative { display: none; }
+body.underline-links a { text-decoration: underline !important; }
+body.strong-focus :focus-visible { outline: 4px solid var(--accent); outline-offset: 3px; }
+body.large-cursor, body.large-cursor * { cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><circle cx='16' cy='16' r='12' fill='none' stroke='black' stroke-width='3'/></svg>") 16 16, auto; }
+body.achromatopsia { filter: none; }
+body.achromatopsia .graph-wrap { filter: grayscale(1); }
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+header, section, footer { border: 2px solid var(--border); margin: 12px; padding: 12px; }
+header { border-style: solid; }
+section.accessibility { border-style: solid; }
+section.regular { border-style: dashed; }
+button, select, input[type="range"] { border: 2px solid var(--border); background: var(--node); color: var(--text); padding: 8px 12px; font: inherit; }
+button { border-style: dotted; cursor: pointer; }
+button[aria-pressed="true"] { border-style: solid; border-color: var(--accent); }
+label { display: block; margin: 8px 0; }
+.graph-wrap { border: 2px solid var(--border); position: relative; min-height: 320px; }
+canvas, svg.graph { width: 100%; height: 320px; display: block; }
+#reading-guide { position: fixed; left: 0; right: 0; height: 2em; background: rgba(200, 109, 215, 0.25); border-top: 2px solid var(--accent); border-bottom: 2px solid var(--accent); pointer-events: none; display: none; z-index: 50; }
+body.reading-guide #reading-guide { display: block; }
+#diff-toast { border: 2px dashed var(--accent); padding: 8px; margin: 12px; }
+#token-meter { border: 2px dotted var(--border); padding: 8px; margin: 12px; }
+.node-list { columns: 2; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }

@@ -96,18 +96,14 @@ VALID_ARGS = {
 }
 
 
-def test_tools_call_stubs_return_not_implemented_never_crash():
-    for name in EXPECTED_TOOLS:
-        resp = handle_request({
-            "jsonrpc": "2.0", "id": 1, "method": "tools/call",
-            "params": {"name": name, "arguments": VALID_ARGS[name]},
-        })
-        assert "error" not in resp, resp
-        payload = json.loads(resp["result"]["content"][0]["text"])
-        assert payload == not_implemented(name)
-        assert payload["status"] == "not_implemented"
-        assert payload["block"] == get_tool(name)["_meta"]["block"]
-        assert resp["result"]["isError"] is False
+def test_all_eight_tools_implemented_no_stubs_remain():
+    # End state (Block 7): every tool has a handler; the stub path
+    # exists only for unknown future tools. Each block's own tests
+    # assert its tool's real payload.
+    from app.tools import IMPLEMENTED
+
+    assert set(EXPECTED_TOOLS) == set(IMPLEMENTED)
+    assert not_implemented("hivemind_nope")["status"] == "not_implemented"
 
 
 def test_tools_call_rejects_nested_arguments():
@@ -148,29 +144,36 @@ def test_initialize_and_unknown_method():
 
 # -- stdio subprocess ----------------------------------------------------
 
-def _run_stdio(requests):
+def _run_stdio(requests, env=None):
     repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     payload = "".join(json.dumps(r) + "\n" for r in requests)
+    run_env = dict(os.environ)
+    run_env.update(env or {})
     proc = subprocess.run(
         [sys.executable, "-m", "app.mcp_server", "--stdio"],
         input=payload, capture_output=True, text=True, cwd=repo, timeout=30,
+        env=run_env,
     )
     assert proc.returncode == 0, proc.stderr
     return [json.loads(line) for line in proc.stdout.splitlines() if line.strip()]
 
 
-def test_server_starts_over_stdio_and_lists_all_8_tools():
+def test_server_starts_over_stdio_and_lists_all_8_tools(tmp_path):
+    # The spawn call writes under the vault, so point the subprocess
+    # at a temp vault/db instead of the repo checkout.
+    env = {"HIVE_MIND_DB_PATH": str(tmp_path / "stdio.db"),
+           "HIVE_MIND_VAULT_DIR": str(tmp_path / "vault")}
     responses = _run_stdio([
         {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}},
         {"jsonrpc": "2.0", "id": 2, "method": "tools/list"},
         {"jsonrpc": "2.0", "id": 3, "method": "tools/call",
-         "params": {"name": "hivemind_explain", "arguments": VALID_ARGS["hivemind_explain"]}},
-    ])
+         "params": {"name": "hivemind_spawn_microbot", "arguments": VALID_ARGS["hivemind_spawn_microbot"]}},
+    ], env=env)
     assert len(responses) == 3
     names = [t["name"] for t in responses[1]["result"]["tools"]]
     assert names == EXPECTED_TOOLS
-    stub = json.loads(responses[2]["result"]["content"][0]["text"])
-    assert stub["status"] == "not_implemented"
+    spawned = json.loads(responses[2]["result"]["content"][0]["text"])
+    assert spawned["status"] == "ok"
 
 
 # -- store primitives ----------------------------------------------------
@@ -231,6 +234,12 @@ def test_store_recall_empty_query_returns_recent(store):
 
 
 # -- no-network guard ------------------------------------------------------
+# Revised in Block 2: the Block 1 wording banned the literal shapes the
+# scrubber must detect ("sk-", "Bearer ") and the env-var names the
+# Block 4/5 fake adapters must reference. The guard's intent — no
+# network, no real secrets — is kept, precisely: no network imports or
+# calls anywhere in app/, and secret *patterns* are allowed only in
+# scrubber.py, where they match shapes and contain no real values.
 
 def test_no_network_or_secret_code_in_app():
     repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -240,5 +249,11 @@ def test_no_network_or_secret_code_in_app():
             continue
         src = open(os.path.join(app_dir, fname)).read()
         for banned in ("httpx", "requests.", "urllib.request", "socket.",
-                       "META_API_KEY", "SUPABASE_", "sk-", "Bearer "):
+                       "http.client", "urlopen", "socket"):
             assert banned not in src, (fname, banned)
+        if fname != "scrubber.py":
+            for banned in ("sk-", "Bearer ", "ghp_"):
+                assert banned not in src, (fname, banned)
+        # No real-looking credential values anywhere, patterns excepted.
+        assert "eyJ" not in src, fname
+        assert "AKIA" not in src or fname == "scrubber.py", fname

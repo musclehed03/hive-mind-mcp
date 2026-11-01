@@ -1,4 +1,4 @@
 # Block 1 only. The MCP server and store are standard library; sqlite-vec
 # is optional at runtime (clean fallback if it cannot load) but pinned
 # here so Docker builds match the tested environment.
-sqlite-vec
+sqlite-vec==0.1.9

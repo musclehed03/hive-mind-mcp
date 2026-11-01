@@ -12,11 +12,11 @@ in the tests:
   tools are marked write and, where the spec requires it, need a
   human-confirmation token in a later block.
 
-Block 1 status: every tool is a stub. ``tools/call`` returns a clear
-``not_implemented`` response naming the block that implements it, and
-never crashes. The foundation primitives (remember/recall/forget/
+Status: tools return ``not_implemented`` until their block lands, and
+never crash. The foundation primitives (remember/recall/forget/
 memory_stats in :mod:`app.store`) are wired underneath and tested
-directly; the hivemind_ surfaces that call them land in Blocks 2-8.
+directly; the hivemind_ surfaces land in Blocks 2-8. The ``IMPLEMENTED``
+set below is the registry of landed tools.
 """
 
 # (name, block, read_only, description, explainer plain language,
@@ -142,6 +142,14 @@ _TOOL_SPECS = [
 ]
 
 
+# Tools whose handler exists in app/dispatch.py. Updated as each block
+# lands; every other tool stays "not_implemented" in tools/list.
+IMPLEMENTED = {"hivemind_scrub_input", "hivemind_capture_idea",
+               "hivemind_query_temporal", "hivemind_crosshatch_verify",
+               "hivemind_prune_memory", "hivemind_snapshot_backup",
+               "hivemind_explain", "hivemind_spawn_microbot"}
+
+
 def build_tools():
     """Return the MCP tools/list entries, in spec order."""
     tools = []
@@ -167,7 +175,7 @@ def build_tools():
                 },
                 "read_only": read_only,
                 "block": block,
-                "status": "not_implemented",
+                "status": "implemented" if name in IMPLEMENTED else "not_implemented",
             },
         })
     return tools
