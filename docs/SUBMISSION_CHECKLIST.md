@@ -60,9 +60,13 @@ Last re-checked: Nov 1, 2026 (Blocks 1–17 built; live gates run).
 - [ ] Project title, description, and theme selected
 - [ ] Repo link added (https://github.com/musclehed03/hive-mind-mcp)
 - [ ] Demo video link added
-- [ ] Meta tooling used listed: Muse Spark via Meta Model API
-      (Cross-Hatch verification + Caveman compression), Muse Code
-      (build agent), Llama open weights noted as the offline fallback
+- [ ] Meta tooling used listed — claim ONLY what is true: Muse
+      Spark via the Meta Model API (Cross-Hatch verification +
+      Caveman compression, live-verified Nov 1, 2026); Llama open
+      weights noted as the offline-fallback architecture (NOT
+      live-verified — Ollama is not installed on the demo
+      machine). Do NOT list Muse Code: it was not used to build
+      this repo.
 - [ ] Accessibility + security (Pillars 5–6) stated as v1 features,
       not future work
 - [ ] Submitted before 9:00 PM ET, Nov 4, 2026 — with time to spare
