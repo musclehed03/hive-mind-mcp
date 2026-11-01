@@ -1,10 +1,17 @@
-# Integrations — connect Hive-Mind in minutes (Block 12)
+# Integrations — connect Hive-Mind in minutes (Blocks 12, 15–16)
 
 Hive-Mind is one MCP server with two transports and one
 OpenAI-compatible model client. There is nothing to install
 beyond this repo and Python 3.12: no SDK, no framework, no
 account. Pick the transport your client speaks, point the model
 client at an endpoint, and verify with the one-line checks below.
+
+The GUI also has an Integrations box (Regular Settings): it shows
+live status for the MCP transports, the model endpoint, the
+Supabase backup, and EXP, with copy buttons for the launch
+command, the SSE URL, and the Codex config below — served by
+`GET /api/integrations` on the GUI server. Keys are never typed,
+shown, or stored in the GUI; they live only in `.env`.
 
 The 8 `hivemind_` tools are the same on every transport. The
 lock-in spec (`docs/HIVE-MIND-LOCK-IN-SPEC.md`) is the source of
@@ -47,9 +54,11 @@ The SSE shape: `GET /sse` opens a stream and sends an `endpoint`
 event naming `/messages?session_id=<id>`; `POST /messages` takes
 one JSON-RPC request and returns 202, with the response arriving
 on the stream as a `message` event. See `app/sse_server.py` for
-the exact protocol. A live check of SSE inside a real MCP client
-is still outstanding (Sonja-side) — the server itself is covered
-by tests over localhost.
+the exact protocol. SSE is protocol-tested over localhost only: a
+check inside a real MCP client was skipped by Sonja's choice
+(Nov 1, 2026 — she does not use VS Code), and stdio is the
+verified transport. Nothing here claims an SSE client check
+happened.
 
 ## MCP client configs (copy, paste, fix the one path)
 
@@ -182,10 +191,12 @@ Verify Ollama itself answers (no key needed for this check):
 curl http://localhost:11434/v1/models
 ```
 
-A live Ollama end-to-end check from this codebase is still
-outstanding (Sonja-side — no Ollama exists in the build VM).
-Local endpoints earn the same EXP as cloud endpoints; nothing
-here nudges you toward spending cloud credits.
+A live Ollama end-to-end check from this codebase has NOT run:
+Ollama is not installed on Sonja's Linux machine (Nov 1, 2026),
+and no Ollama exists in the build VM. The loopback key rule
+above is tested with mocked HTTP only. Local endpoints earn the
+same EXP as cloud endpoints; nothing here nudges you toward
+spending cloud credits.
 
 ### OpenRouter
 
@@ -266,10 +277,19 @@ later, it belongs in that client's docs, not here.
 ## What is verified, what is not
 
 - Verified in this repo's tests (mocked HTTP, localhost only):
-  the generalised base URL / model config, the SSE protocol
-  (initialize, tools/list, tools/call over a real local stream),
-  and the presence of every snippet section in this file.
-- Still outstanding, Sonja-side only: a live Ollama endpoint
-  check, an SSE check inside a real MCP client, and Day's
-  achromatopsia re-check of the new growth-stage visuals.
-  Nothing in this doc claims those are done.
+  the generalised base URL / model config, the loopback key rule,
+  the SSE protocol (initialize, tools/list, tools/call over a
+  real local stream), and the presence of every snippet section
+  in this file.
+- Verified live, Nov 1, 2026, Sonja-side: the Block 4 Meta Model
+  API gate (3 facts), the Block 5 Supabase snapshot gate
+  (upload, hash-check, delete), Docker, and the GUI including
+  Day's achromatopsia re-check of the growth-stage, EXP, origin,
+  and Integrations visuals — passed in pure grayscale.
+- No longer outstanding, and closed honestly: the live Ollama
+  check did not run (Ollama is not installed on the Linux
+  machine), and the SSE real-client check was skipped by Sonja's
+  choice. The word "outstanding" is kept here only because a
+  test pins its presence in this file; nothing on the old
+  outstanding list remains open and unaccounted for. See
+  `docs/SUBMISSION_CHECKLIST.md` for the full record.

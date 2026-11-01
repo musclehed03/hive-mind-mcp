@@ -42,14 +42,15 @@ Last re-checked: Nov 1, 2026 (Blocks 1–17 built; live gates run).
   installed on the Linux machine (Sonja, Nov 1, 2026). The
   key-optional-for-loopback fix (Block 15) is built and tested,
   but no local endpoint was verified end to end.
-- Demo script predates Blocks 9–17 (stages, EXP, Integrations
-  box, origin colours). Refresh `docs/DEMO_SCRIPT.md` before
-  recording so the demo shows what actually shipped.
+- Demo script refreshed for Blocks 9–17 (stages, EXP, Integrations
+  box, origin colours; fake mode only on camera), Nov 1, 2026.
+  Docs (README, `docs/INTEGRATIONS.md`, demo script) re-checked
+  the same day: nothing behind, ports and gate results current.
 
 ## Demo
 
-- [x] 3-minute script: `docs/DEMO_SCRIPT.md` (needs the refresh
-      noted above before recording)
+- [x] 3-minute script: `docs/DEMO_SCRIPT.md` (refreshed for
+      Blocks 9–17, Nov 1, 2026)
 - [ ] Demo recorded (screen capture, GUI + terminal, captions on)
 - [ ] Demo run-through done end-to-end on the demo machine
       (re-run after Blocks 9–17 changes, with the refreshed script)
