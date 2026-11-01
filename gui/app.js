@@ -368,14 +368,42 @@
   var graphData = SAMPLE_DATA;
   var positions = {};
 
-  function layout(nodes) {
+  /* Layout derives centre and radius from the canvas's real
+     displayed size (Block 13): a fixed centre used to sit
+     left-of-centre in the stretched box, and labels ran off the
+     right edge. The shared helper lives in stage.js (loaded
+     first); the inline fallback below uses the same formula so a
+     missing helper can never strand the graph unlaid-out. */
+  function layout(nodes, width, height) {
+    var api = window.HIVEMIND_GRAPH || null;
+    if (api && api.layoutNodes && width && height) {
+      positions = api.layoutNodes(nodes, width, height);
+      return;
+    }
     positions = {};
-    var cx = 300, cy = 160, radius = 120;
+    var cx = (width || 0) / 2, cy = (height || 0) / 2;
+    var radius = Math.max(40, Math.min(width || 0, height || 0) / 2 - 56);
     nodes.forEach(function (node, i) {
       var angle = (2 * Math.PI * i) / Math.max(1, nodes.length);
       positions[node.id] = {x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle)};
     });
   }
+  /* Size the canvas backing store to its displayed size, in CSS
+     pixels, at the device pixel ratio (capped at 2, so a HiDPI
+     screen stays sharp without a 3x/4x backing store). Drawing
+     then happens in CSS pixels, so the picture fills the box it
+     is actually shown in instead of being stretched from a
+     smaller fixed size. */
+  function fitCanvas(canvas) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var rect = canvas.getBoundingClientRect();
+    var width = Math.max(1, rect.width || canvas.clientWidth || 0);
+    var height = Math.max(1, rect.height || canvas.clientHeight || 0);
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    return {width: width, height: height, dpr: dpr};
+  }
+  var renderSeq = 0;
   function drawShape(ctx, shape, x, y, size, fill, stroke) {
     ctx.beginPath();
     if (shape === "square") ctx.rect(x - size, y - size, size * 2, size * 2);
@@ -390,7 +418,7 @@
     var list = document.getElementById("node-list");
     var status = document.getElementById("graph-status");
     if (!canvas || !list) return;
-    layout(graphData.nodes);
+    var seq = ++renderSeq;
     /* Growth stage (Block 10): derived from the live node list —
        total count picks the stage, checked facts brighten it. The
        label is the source of truth; canvas density/scale are
@@ -408,8 +436,10 @@
     }
     if (state.metaphor === "nebula") {
       canvas.style.display = "block"; if (svg) svg.style.display = "none";
+      var dims = fitCanvas(canvas);
       var ctx = canvas.getContext("2d");
-      canvas.width = 600; canvas.height = 320;
+      ctx.setTransform(dims.dpr, 0, 0, dims.dpr, 0, 0);
+      layout(graphData.nodes, dims.width, dims.height);
       /* Read colours from body, NOT from documentElement. Palette
          variables are set inline on :root, but body class rules
          (high-contrast, light theme) set the same variables on body
@@ -423,9 +453,9 @@
          painted explicitly below, so the canvas never depends on
          what shows through it. */
       var styles = getComputedStyle(document.body);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, dims.width, dims.height);
       ctx.fillStyle = styles.getPropertyValue("--bg").trim() || "#080609";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, dims.width, dims.height);
       /* Faint dust behind the nodes: deterministic positions from a
          hash of the index (no Math.random, so the picture is stable
          across redraws), count and brightness from the stage. Dust
@@ -435,11 +465,13 @@
       ctx.save();
       ctx.globalAlpha = dustAlpha;
       ctx.fillStyle = styles.getPropertyValue("--text").trim() || "#ddd3d7";
+      var graphApi = window.HIVEMIND_GRAPH || null;
       for (var d = 0; d < dustCount; d++) {
-        var hx = ((d + 1) * 2654435761) % 600;
-        var hy = ((d + 1) * 40503) % 320;
+        var dust = graphApi && graphApi.dustPoint
+          ? graphApi.dustPoint(d, dims.width, dims.height)
+          : {x: 0, y: 0};
         ctx.beginPath();
-        ctx.arc(hx < 0 ? hx + 600 : hx, hy < 0 ? hy + 320 : hy, 1.5, 0, 2 * Math.PI);
+        ctx.arc(dust.x, dust.y, 1.5, 0, 2 * Math.PI);
         ctx.fill();
       }
       ctx.restore();
@@ -448,6 +480,7 @@
       var nodeSize = 14 * (stage ? stage.scale : 1);
       var i = 0;
       (function drawChunk() {
+        if (seq !== renderSeq) return; /* a newer render superseded this one */
         var end = Math.min(nodes.length, i + 50);
         for (; i < end; i++) {
           var node = nodes[i];
@@ -465,9 +498,31 @@
             ctx.strokeStyle = styles.getPropertyValue("--edge").trim() || "#547c6d";
             ctx.stroke();
           }
+          /* Keyword labels (Block 13): the first three words of the
+             memory, side-aware and truncated to the space between
+             the node and the canvas edge, so labels never overlap
+             each other, the node, or the edge. The full sentence
+             stays in the text list below the graph. */
           ctx.fillStyle = styles.getPropertyValue("--text").trim() || "#ddd3d7";
           ctx.font = "12px sans-serif";
-          ctx.fillText(node.label.slice(0, 28), pos.x + 18, pos.y + 4);
+          ctx.textBaseline = "middle";
+          if (graphApi && graphApi.keywordLabel) {
+            var keyword = graphApi.keywordLabel(node.label || node.text || "");
+            if (keyword) {
+              var geo = graphApi.labelGeometry(pos, dims.width, nodeSize);
+              var room = geo.textAlign === "right"
+                ? geo.x - 8
+                : dims.width - 8 - geo.x;
+              if (room >= 24) {
+                var fitted = graphApi.fitLabel(keyword, room, function (t) { return ctx.measureText(t).width; });
+                if (fitted) {
+                  ctx.textAlign = geo.textAlign;
+                  ctx.fillText(fitted, geo.x, pos.y);
+                  ctx.textAlign = "left";
+                }
+              }
+            }
+          }
         }
         if (i < nodes.length) requestAnimationFrame(drawChunk);
       })();
@@ -550,6 +605,11 @@
     applySettings();
     bindControls();
     bindTooltips();
+    /* Re-render on resize: the canvas is sized to its displayed
+       size on every render, so a width change re-centres the
+       graph instead of stretching the old picture. No polling:
+       this fires only on actual resize events. */
+    window.addEventListener("resize", function () { renderGraph(); });
     loadData();
   });
   // Exposed for tests/debugging in the browser console only.

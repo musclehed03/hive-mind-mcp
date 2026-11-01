@@ -71,10 +71,92 @@
     };
   }
 
+  /* Nebula layout + keyword labels (Block 13). The canvas is
+     sized to its displayed size on every render (see app.js), so
+     layout must derive its centre and radius from the real width
+     and height — never from a fixed backing-store size. Labels
+     are keywords, not sentences: the first three words of the
+     memory text, capped at 20 characters. The full sentence stays
+     in the text list below the graph. Labels sit on the side away
+     from the canvas centre, 18px clear of the node circle, and are
+     truncated with the canvas's own measureText so they never
+     cross the canvas edge. */
+  var KEYWORD_MAX_CHARS = 20;
+  var LABEL_GAP_PX = 18;
+
+  function keywordLabel(text) {
+    var words = String(text || "").trim().split(/\s+/).filter(function (w) { return w.length > 0; });
+    var joined = words.slice(0, 3).join(" ");
+    if (joined.length > KEYWORD_MAX_CHARS) {
+      return joined.slice(0, KEYWORD_MAX_CHARS - 1) + "…";
+    }
+    return joined;
+  }
+
+  function layoutNodes(nodes, width, height) {
+    var positions = {};
+    var cx = width / 2, cy = height / 2;
+    var radius = Math.max(40, Math.min(width, height) / 2 - 56);
+    (nodes || []).forEach(function (node, i) {
+      var angle = (2 * Math.PI * i) / Math.max(1, nodes.length);
+      positions[node.id] = {x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle)};
+    });
+    return positions;
+  }
+
+  function dustPoint(index, width, height) {
+    var hx = ((index + 1) * 2654435761) % width;
+    var hy = ((index + 1) * 40503) % height;
+    return {
+      x: hx < 0 ? hx + width : hx,
+      y: hy < 0 ? hy + height : hy
+    };
+  }
+
+  function labelSide(pos, canvasWidth) {
+    return pos.x >= canvasWidth / 2 ? "right" : "left";
+  }
+
+  /* Where a label goes: on the outer side of the node, LABEL_GAP_PX
+     clear of the node circle's edge, so text never overlaps the
+     circle. Returns the anchor x and the canvas textAlign to use
+     with it. Callers clamp the text itself (fitLabel) to the space
+     between this anchor and the canvas edge. */
+  function labelGeometry(pos, canvasWidth, nodeSize) {
+    if (labelSide(pos, canvasWidth) === "right") {
+      return {x: pos.x - nodeSize - LABEL_GAP_PX, textAlign: "right"};
+    }
+    return {x: pos.x + nodeSize + LABEL_GAP_PX, textAlign: "left"};
+  }
+
+  /* Truncate text with a real measurement function (the canvas
+     context's measureText in the page) so the fitted text fits
+     maxWidth. Returns "" when even an ellipsis does not fit. */
+  function fitLabel(text, maxWidth, measure) {
+    if (!text || maxWidth <= 0) return "";
+    if (measure(text) <= maxWidth) return text;
+    if (measure("…") > maxWidth) return "";
+    var trimmed = text;
+    while (trimmed.length > 0 && measure(trimmed + "…") > maxWidth) {
+      trimmed = trimmed.slice(0, -1);
+    }
+    return trimmed === "" ? "…" : trimmed + "…";
+  }
+
   window.HIVEMIND_STAGE = {
     STAGES: STAGES,
     stageFor: stageFor,
     countVerified: countVerified,
     isVerified: isVerified
+  };
+  window.HIVEMIND_GRAPH = {
+    keywordLabel: keywordLabel,
+    layoutNodes: layoutNodes,
+    dustPoint: dustPoint,
+    labelSide: labelSide,
+    labelGeometry: labelGeometry,
+    fitLabel: fitLabel,
+    KEYWORD_MAX_CHARS: KEYWORD_MAX_CHARS,
+    LABEL_GAP_PX: LABEL_GAP_PX
   };
 })();
