@@ -26,3 +26,13 @@ const HIVEMIND_PRESETS = {
    dyslexic readers. The slider goes down as well as up, cap 0.12em. */
 const HIVEMIND_SPACING = {"min": -0.02, "max": 0.12, "default": 0.02, "step": 0.01};
 const HIVEMIND_TEXT_SCALE = {"min": 80, "max": 200, "default": 100, "step": 5};
+/* Top-level `const` in a classic script does NOT create properties on
+   `window`, so app.js reading window.HIVEMIND_PALETTES /
+   window.HIVEMIND_PRESETS got `undefined` and every profile and
+   palette silently did nothing. Expose the same objects on `window`
+   explicitly; the const declarations above stay exactly as written
+   so the strict-JSON parsing the tests rely on keeps working. */
+window.HIVEMIND_PALETTES = HIVEMIND_PALETTES;
+window.HIVEMIND_PRESETS = HIVEMIND_PRESETS;
+window.HIVEMIND_SPACING = HIVEMIND_SPACING;
+window.HIVEMIND_TEXT_SCALE = HIVEMIND_TEXT_SCALE;

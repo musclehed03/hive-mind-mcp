@@ -212,6 +212,80 @@ def test_settings_persist_and_respect_os_preferences_in_code():
     assert "prefers-contrast" in js
 
 
+# -- GUI bug fixes (Sonja's live report, 2026-11-01) ------------------------
+
+def test_settings_data_exposed_on_window():
+    # Top-level `const` in a classic script does NOT create window
+    # properties, so app.js reading window.HIVEMIND_PALETTES /
+    # window.HIVEMIND_PRESETS got undefined and every profile and
+    # palette silently did nothing. The objects must be exposed on
+    # window explicitly, while the const declarations stay intact so
+    # _extract_json_object keeps parsing them.
+    data = _read("settings-data.js")
+    assert "const HIVEMIND_PALETTES = {" in data
+    assert "const HIVEMIND_PRESETS = {" in data
+    assert "window.HIVEMIND_PALETTES = HIVEMIND_PALETTES" in data
+    assert "window.HIVEMIND_PRESETS = HIVEMIND_PRESETS" in data
+    js = _read("app.js")
+    assert "window.HIVEMIND_PALETTES" in js
+    assert "window.HIVEMIND_PRESETS" in js
+
+
+def test_load_data_tries_live_api_before_static_export():
+    # loadData() used to fetch only data.json, which does not exist
+    # in gui/, so it always fell back to the 3 sample nodes and
+    # seeding the Store could never show. The live /api/memories
+    # endpoint must be tried first, then data.json, then the sample.
+    js = _read("app.js")
+    load_start = js.index("function loadData()")
+    load_body = js[load_start:]
+    assert 'fetch("/api/memories"' in load_body
+    assert 'fetch("data.json")' in load_body
+    assert load_body.index('fetch("/api/memories"') < load_body.index('fetch("data.json")')
+    assert "SAMPLE_DATA" in load_body
+
+
+def test_achromatopsia_grayscale_covers_whole_page():
+    # The old rule was `body.achromatopsia { filter: none }` with
+    # grayscale only on .graph-wrap, so the logo, reading guide, and
+    # native controls kept colour. Grayscale must cover header, main,
+    # and footer, and the reading guide must not stay pink.
+    css = _read("styles.css")
+    assert "body.achromatopsia { filter: none" not in css
+    assert "grayscale(1)" in css
+    assert "body.achromatopsia header" in css
+    assert "body.achromatopsia main" in css
+    assert "body.achromatopsia footer" in css
+    assert "body.achromatopsia #reading-guide" in css
+
+
+def test_saturation_variable_is_consumed_in_css():
+    # --saturation was set by JS but never used in CSS, so the slider
+    # was a no-op. It must drive a saturate() filter.
+    css = _read("styles.css")
+    assert "saturate(var(--saturation))" in css
+    js = _read("app.js")
+    assert '"--saturation"' in js
+
+
+def test_native_controls_follow_palette_accent():
+    # Without accent-color, Chrome keeps range sliders and selects
+    # blue regardless of the palette. Controls must take the accent
+    # CSS variable so palette (and grayscale) changes are visible.
+    css = _read("styles.css")
+    assert "accent-color: var(--accent)" in css
+
+
+def test_slider_sync_does_not_rewrite_focused_slider():
+    # syncControls() rewrote every slider's .value on each
+    # applySettings(), which could swallow a drag. The focused
+    # slider must be left alone, and range inputs must listen to
+    # 'change' as well as 'input'.
+    js = _read("app.js")
+    assert "document.activeElement" in js
+    assert 'addEventListener("change"' in js
+
+
 # -- explain -----------------------------------------------------------------
 
 def test_explain_tool_and_pillar_and_setting():

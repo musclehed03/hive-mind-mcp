@@ -27,8 +27,17 @@ body.simplified img, body.simplified .decorative { display: none; }
 body.underline-links a { text-decoration: underline !important; }
 body.strong-focus :focus-visible { outline: 4px solid var(--accent); outline-offset: 3px; }
 body.large-cursor, body.large-cursor * { cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><circle cx='16' cy='16' r='12' fill='none' stroke='black' stroke-width='3'/></svg>") 16 16, auto; }
-body.achromatopsia { filter: none; }
-body.achromatopsia .graph-wrap { filter: grayscale(1); }
+/* Saturation and achromatopsia filters are scoped to header/main/
+   footer, NOT to body: a filter on body would make the fixed
+   reading guide (a direct child of body) position relative to the
+   body instead of the viewport. The guide itself is left unfiltered
+   and gets a grayscale background in achromatopsia mode below, so
+   it stays usable and never carries colour. The canvas, logo, and
+   native controls inside header/main/footer all go through the
+   filter, so no colour survives anywhere on the page. */
+header, main, footer { filter: saturate(var(--saturation)); }
+body.achromatopsia header, body.achromatopsia main, body.achromatopsia footer { filter: grayscale(1) saturate(var(--saturation)); }
+body.achromatopsia #reading-guide { background: rgba(89, 89, 89, 0.25); }
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
@@ -36,7 +45,10 @@ header, section, footer { border: 2px solid var(--border); margin: 12px; padding
 header { border-style: solid; }
 section.accessibility { border-style: solid; }
 section.regular { border-style: dashed; }
-button, select, input[type="range"] { border: 2px solid var(--border); background: var(--node); color: var(--text); padding: 8px 12px; font: inherit; }
+/* accent-color lets palette changes (including the grayscale accent)
+   show on native controls: without it Chrome keeps range sliders and
+   select controls blue no matter what the palette says. */
+button, select, input[type="range"] { border: 2px solid var(--border); background: var(--node); color: var(--text); padding: 8px 12px; font: inherit; accent-color: var(--accent); }
 button { border-style: dotted; cursor: pointer; }
 button[aria-pressed="true"] { border-style: solid; border-color: var(--accent); }
 label { display: block; margin: 8px 0; }

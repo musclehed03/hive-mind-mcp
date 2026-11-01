@@ -84,6 +84,23 @@
     var el = document.getElementById(id);
     if (el) el.setAttribute("aria-pressed", value ? "true" : "false");
   }
+  // Do not rewrite a range slider's value while the user is dragging
+  // it: syncControls() runs on every applySettings(), and resetting
+  // .value mid-drag can swallow the drag in some browsers. Labels
+  // below always update; only the focused slider's own value is left
+  // alone until it loses focus.
+  function setRangeValue(el, value) {
+    if (!el) return;
+    if (document.activeElement !== el) el.value = value;
+  }
+  // Range inputs fire both 'input' (while dragging) and 'change'
+  // (when the drag/track click settles). Listen to both so a value
+  // change is never lost if one of the two is swallowed.
+  function bindRange(el, onInput) {
+    if (!el) return;
+    el.addEventListener("input", onInput);
+    el.addEventListener("change", onInput);
+  }
   function syncControls() {
     setToggle("toggle-focus", state.focus_mode);
     setToggle("toggle-motion", state.safe_motion);
@@ -99,19 +116,19 @@
     var palette = document.getElementById("palette-select");
     if (palette) palette.value = state.colorblind_palette;
     var ts = document.getElementById("text-size");
-    if (ts) { ts.value = state.text_scale; }
+    setRangeValue(ts, state.text_scale);
     var tsv = document.getElementById("text-size-value");
     if (tsv) tsv.textContent = state.text_scale + "%";
     var ls = document.getElementById("line-spacing");
-    if (ls) ls.value = state.line_height;
+    setRangeValue(ls, state.line_height);
     var lsv = document.getElementById("line-spacing-value");
     if (lsv) lsv.textContent = String(state.line_height);
     var lsp = document.getElementById("letter-spacing");
-    if (lsp) lsp.value = state.letter_spacing_em;
+    setRangeValue(lsp, state.letter_spacing_em);
     var lspv = document.getElementById("letter-spacing-value");
     if (lspv) lspv.textContent = Number(state.letter_spacing_em).toFixed(2) + "em";
     var sat = document.getElementById("saturation");
-    if (sat) sat.value = state.saturation;
+    setRangeValue(sat, state.saturation);
     var satv = document.getElementById("saturation-value");
     if (satv) satv.textContent = state.saturation + "%";
     document.querySelectorAll(".profile-button").forEach(function (btn) {
@@ -126,7 +143,7 @@
     var dest = document.getElementById("backup-destination");
     if (dest) dest.value = state.backup_destination;
     var budget = document.getElementById("token-budget");
-    if (budget) budget.value = state.token_budget;
+    setRangeValue(budget, state.token_budget);
     var bv = document.getElementById("token-budget-value");
     if (bv) bv.textContent = String(state.token_budget);
     var rl = document.getElementById("reading-level");
@@ -176,13 +193,13 @@
     var palette = document.getElementById("palette-select");
     if (palette) palette.addEventListener("change", function () { state.colorblind_palette = palette.value; state.active_profile = ""; applySettings(); renderGraph(); });
     var ts = document.getElementById("text-size");
-    if (ts) ts.addEventListener("input", function () { state.text_scale = clamp(Number(ts.value), 80, 200); state.active_profile = ""; applySettings(); });
+    bindRange(ts, function () { state.text_scale = clamp(Number(ts.value), 80, 200); state.active_profile = ""; applySettings(); });
     var ls = document.getElementById("line-spacing");
-    if (ls) ls.addEventListener("input", function () { state.line_height = clamp(Number(ls.value), 1.0, 2.0); state.active_profile = ""; applySettings(); });
+    bindRange(ls, function () { state.line_height = clamp(Number(ls.value), 1.0, 2.0); state.active_profile = ""; applySettings(); });
     var lsp = document.getElementById("letter-spacing");
-    if (lsp) lsp.addEventListener("input", function () { state.letter_spacing_em = clamp(Number(lsp.value), -0.02, 0.12); state.active_profile = ""; applySettings(); });
+    bindRange(lsp, function () { state.letter_spacing_em = clamp(Number(lsp.value), -0.02, 0.12); state.active_profile = ""; applySettings(); });
     var sat = document.getElementById("saturation");
-    if (sat) sat.addEventListener("input", function () { state.saturation = clamp(Number(sat.value), 0, 100); state.active_profile = ""; applySettings(); });
+    bindRange(sat, function () { state.saturation = clamp(Number(sat.value), 0, 100); state.active_profile = ""; applySettings(); });
     var reset = document.getElementById("reset-settings");
     if (reset) reset.addEventListener("click", function () { state = Object.assign({}, DEFAULTS); try { localStorage.removeItem(STORAGE_KEY); } catch (e) {} applySettings(); renderGraph(); });
     var metaphor = document.getElementById("metaphor-select");
@@ -194,7 +211,7 @@
     var dest = document.getElementById("backup-destination");
     if (dest) dest.addEventListener("change", function () { state.backup_destination = dest.value; applySettings(); });
     var budget = document.getElementById("token-budget");
-    if (budget) budget.addEventListener("input", function () { state.token_budget = clamp(Number(budget.value), 50, 1000); applySettings(); });
+    bindRange(budget, function () { state.token_budget = clamp(Number(budget.value), 50, 1000); applySettings(); });
     var rl = document.getElementById("reading-level");
     if (rl) rl.addEventListener("change", function () { state.reading_level = rl.value; applySettings(); });
     var mm = document.getElementById("microbot-mode");
@@ -325,9 +342,20 @@
   }
 
   function loadData() {
-    fetch("data.json").then(function (r) { return r.ok ? r.json() : Promise.reject(new Error("no data.json")); })
+    // Live data first: the GUI server's /api/memories endpoint reads
+    // the real Store, so seeding the Store shows up on Refresh. Only
+    // if there is no server (static export / file://) fall back to a
+    // pre-exported data.json, and only then to the built-in sample
+    // data. The status text stays honest via graphData.live, which
+    // the live and exported payloads set to true and SAMPLE_DATA
+    // leaves false.
+    fetch("/api/memories", {cache: "no-store"}).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error("no live API")); })
       .then(function (data) { graphData = data; renderGraph(); })
-      .catch(function () { graphData = SAMPLE_DATA; renderGraph(); });
+      .catch(function () {
+        fetch("data.json").then(function (r) { return r.ok ? r.json() : Promise.reject(new Error("no data.json")); })
+          .then(function (data) { graphData = data; renderGraph(); })
+          .catch(function () { graphData = SAMPLE_DATA; renderGraph(); });
+      });
   }
 
   document.addEventListener("DOMContentLoaded", function () {
