@@ -1,0 +1,18 @@
+services:
+  hive-mind:
+    build: .
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./data:/app/data
+      - ./vault:/app/vault
+    environment:
+      - HIVE_MIND_DB_PATH=/app/data/hive-mind.db
+      - HIVE_MIND_VAULT_DIR=/app/vault
+    restart: "no"
+    # Lean, Toshiba/Surface-friendly caps: Block 1 does no model work, so
+    # it should never need more than this. No always-on service in Block 1;
+    # run it attached when a client needs it, then stop it.
+    mem_limit: 256m
+    mem_reservation: 64m
+    cpus: 0.5
