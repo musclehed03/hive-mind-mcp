@@ -82,7 +82,7 @@ header .status strong { color: var(--accent); }
 main { display: grid; grid-template-columns: 1fr; gap: 16px; padding: 12px; }
 @media (min-width: 900px) {
   main { grid-template-columns: 1fr 1fr; }
-  main > section:first-child, main > section:last-child { grid-column: 1 / -1; }
+  main > section:first-child, main > section:last-child, main > section.integrations { grid-column: 1 / -1; }
 }
 section {
   border: 2px solid var(--border); border-radius: var(--radius);
@@ -150,6 +150,22 @@ body.reading-guide #reading-guide { display: block; }
 #growth-stage { border: 2px solid var(--border); border-radius: var(--radius); padding: 10px 12px; margin: 12px 0 0; }
 #exp-meter { border: 2px dotted var(--accent); border-radius: var(--radius); padding: 10px 12px; margin: 12px 0 0; }
 #graph-status { margin: 10px 0 0; }
+/* Integrations box (Block 16): clean rows, one per connection.
+   Status is never carried by colour alone: the word is always
+   printed, and the border style carries the same meaning as the
+   rest of the GUI — solid = up/available, dashed = not connected,
+   dotted = fake/test-only or local-only. */
+.integration-rows { list-style: none; padding: 0; margin: 12px 0 0; }
+.integration-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; border: 2px solid var(--border); border-radius: var(--radius); padding: 10px 12px; margin: 0 0 8px; }
+.integration-row button { margin: 0; }
+.integration-label { font-weight: 700; }
+.integration-value { overflow-wrap: anywhere; }
+.integration-status { border: 2px solid var(--accent); border-radius: 999px; padding: 2px 10px; margin-left: auto; white-space: nowrap; }
+.integration-status.status-connected, .integration-status.status-available { border-style: solid; }
+.integration-status.status-off { border-style: dashed; }
+.integration-status.status-fake, .integration-status.status-local { border-style: dotted; }
+.integration-snippet { border: 2px dashed var(--border); border-radius: var(--radius); padding: 10px 12px; overflow-x: auto; background: var(--bg); }
+.integration-steps li { margin-bottom: 6px; }
 .node-list { columns: 2; column-gap: 24px; padding-left: 20px; }
 .node-list li { break-inside: avoid; margin-bottom: 6px; }
 @media (max-width: 640px) {

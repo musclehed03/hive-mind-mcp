@@ -290,11 +290,28 @@
     return {text: fitted, x: geo.x, y: y, box: box};
   }
 
+  /* Integrations status words (Block 16): the CSS class for a
+     status word, so status is carried by border style as well as
+     by the printed word — never by colour alone. Pure function,
+     shared with app.js through the same export as the graph
+     helpers, so tests can execute it for real. */
+  function integrationStatusClass(statusWord) {
+    if (statusWord === "Connected" || statusWord === "Available") {
+      return "status-connected";
+    }
+    if (statusWord === "Not connected") return "status-off";
+    if (statusWord === "Fake (tests only)") return "status-fake";
+    return "status-local";
+  }
+
   window.HIVEMIND_STAGE = {
     STAGES: STAGES,
     stageFor: stageFor,
     countVerified: countVerified,
     isVerified: isVerified
+  };
+  window.HIVEMIND_INTEGRATIONS = {
+    statusClassFor: integrationStatusClass
   };
   window.HIVEMIND_GRAPH = {
     keywordLabel: keywordLabel,

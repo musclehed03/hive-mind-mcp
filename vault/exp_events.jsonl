@@ -1,0 +1,2 @@
+{"created_at": "2026-11-01T13:57:25.093874+00:00", "endpoint": "model-endpoint:http://localhost:11434/v1 model gemma3:4b", "event": "exp", "kind": "endpoint_attached", "points": 50}
+{"created_at": "2026-11-01T13:57:25.094970+00:00", "endpoint": "supabase:https://smoke-test.supabase.co", "event": "exp", "kind": "endpoint_attached", "points": 50}

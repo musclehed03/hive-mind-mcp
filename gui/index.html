@@ -134,6 +134,56 @@
     <button type="button" id="toggle-tooltips" aria-pressed="true" aria-label="Tooltips on or off" data-tooltip="Turn the quick helper tips on or off. When they are off, no tips pop up.">Tooltips: on</button>
   </section>
 
+  <section class="regular integrations" id="integrations" aria-label="Integrations">
+    <h2>Integrations</h2>
+    <p>Connect Hive-Mind to the apps and models you use. This box only shows what is connected. It never asks for a key.</p>
+    <p><strong>Keys are never typed here.</strong> Keys live in the <code>.env</code> file in the Hive-Mind folder, edited with <code>nano</code> in the terminal. Never paste a key in chat, and never type one on this page.</p>
+    <ul class="integration-rows">
+      <li class="integration-row">
+        <span class="integration-label">Memory server (this computer)</span>
+        <code class="integration-value" id="value-stdio">python -m app.mcp_server</code>
+        <span class="integration-status status-available" id="status-stdio">Available</span>
+        <button type="button" id="copy-stdio" data-copy="stdio" aria-label="Copy the memory server start command" data-tooltip="Copy the command that starts Hive-Mind for an app on this computer.">Copy command</button>
+      </li>
+      <li class="integration-row">
+        <span class="integration-label">Memory server (web address)</span>
+        <code class="integration-value" id="value-sse">http://127.0.0.1:8765/sse</code>
+        <span class="integration-status status-off" id="status-sse">Not connected</span>
+        <button type="button" id="copy-sse" data-copy="sse" aria-label="Copy the memory server web address" data-tooltip="Copy the web address of Hive-Mind, for apps that need a web address instead of a command.">Copy address</button>
+      </li>
+      <li class="integration-row">
+        <span class="integration-label">Model (the brain that checks facts)</span>
+        <code class="integration-value" id="value-model">https://api.meta.ai/v1 · muse-spark-1.3</code>
+        <span class="integration-status status-fake" id="status-model">Fake (tests only)</span>
+      </li>
+      <li class="integration-row">
+        <span class="integration-label">Backup storage (Supabase)</span>
+        <code class="integration-value" id="value-supabase">hive-mind-snapshots</code>
+        <span class="integration-status status-off" id="status-supabase">Not connected</span>
+      </li>
+      <li class="integration-row">
+        <span class="integration-label">Points for healthy memories (EXP)</span>
+        <code class="integration-value" id="value-exp">0 healthy actions</code>
+        <span class="integration-status status-local" id="status-exp">Local only</span>
+      </li>
+    </ul>
+    <h3>Connect Codex (copy, paste, fix the one path)</h3>
+    <pre class="integration-snippet"><code id="codex-config-snippet">[mcp_servers.hive-mind]
+command = "python"
+args = ["-m", "app.mcp_server"]
+cwd = "ABSOLUTE_PATH_TO_HIVE_MIND_MCP"</code></pre>
+    <button type="button" id="copy-config" data-copy="config" aria-label="Copy the Codex setup text" data-tooltip="Copy the setup text for Codex. Paste it into the Codex settings file, and change the folder path to your Hive-Mind folder.">Copy Codex setup</button>
+    <h3>What you need, and where to find it</h3>
+    <ol class="integration-steps">
+      <li>Keys live in one file: <code>.env</code>, in the Hive-Mind folder. Open it in the terminal with <code>nano .env</code>. Never paste a key in chat, and never type one on this page.</li>
+      <li>Meta model: get your key at <code>dev.meta.ai</code>, under API Keys. Check Billing there too, so you know your free credits. Put the key in <code>.env</code> as <code>META_API_KEY</code>.</li>
+      <li>Ollama (on your own computer): no key needed. Use the model name shown by <code>ollama list</code>.</li>
+      <li>OpenRouter: get your key from your OpenRouter account page, and use the exact provider/model name from your account.</li>
+      <li>After editing <code>.env</code>, start a fresh terminal so the new settings are picked up.</li>
+      <li>Full steps for every app and model are in <code>docs/INTEGRATIONS.md</code>, in the Hive-Mind folder.</li>
+    </ol>
+  </section>
+
   <section id="plain-language-guide" aria-label="Plain-language guide">
     <h2>Plain-language guide</h2>
     <p>Every button and box on this page has a short, plain-words tip. Hold your pointer over a button or box for half a second to read its tip. You can turn tips off in Regular Settings.</p>
@@ -146,6 +196,7 @@
       <li>The Accessibility Suite only changes how the page looks and reads: colours, text size, spacing, and movement. It never deletes or changes your memories.</li>
       <li>Growth stage is how grown your memory sky is. A Nebula becomes a Protostar, then a Star, then a Radiant Sun as you add memories and check facts. The stage is always written out in words next to the picture.</li>
       <li>EXP is points for keeping memories healthy: checked facts, settled mix-ups, and backups. EXP never costs money and never buys anything.</li>
+      <li>Integrations shows which apps and models are connected to Hive-Mind, and gives you the setup text to copy. Keys are never typed on this page: they live in the .env file, edited with nano in the terminal.</li>
       <li>If anything ever looks wrong, press Reset accessibility settings to go back to the starting look.</li>
     </ul>
   </section>

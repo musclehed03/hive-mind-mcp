@@ -345,6 +345,12 @@
     });
     var refresh = document.getElementById("refresh-button");
     if (refresh) refresh.addEventListener("click", loadData);
+    /* Integrations copy buttons (Block 16): each copies plain
+       text only — a command, an address, or the Codex setup
+       snippet. Never a key: no key is ever on this page. */
+    document.querySelectorAll("[data-copy]").forEach(function (button) {
+      button.addEventListener("click", function () { copyIntegration(button); });
+    });
     var aloud = document.getElementById("read-aloud-button");
     if (aloud) aloud.addEventListener("click", readAloud);
     document.addEventListener("mousemove", function (ev) {
@@ -617,8 +623,91 @@
       .catch(function () { /* no server: keep the default text */ });
   }
 
+  /* Integrations copy (Block 16): clipboard with a plain
+     fallback. The button briefly says "Copied" (or "Copy
+     failed") and returns to its old text after one one-shot
+     delay. Only plain setup text is ever copied — a command,
+     an address, or the Codex snippet. No key is ever on this
+     page, so no key can ever be copied from it. */
+  function fallbackCopy(text) {
+    var area = document.createElement("textarea");
+    area.value = text;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.opacity = "0";
+    document.body.appendChild(area);
+    area.select();
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    document.body.removeChild(area);
+    return ok;
+  }
+  function copyIntegration(button) {
+    var kind = button.getAttribute("data-copy");
+    var text = "";
+    if (kind === "stdio") {
+      var stdioValue = document.getElementById("value-stdio");
+      text = stdioValue ? stdioValue.textContent : "python -m app.mcp_server";
+    } else if (kind === "sse") {
+      var sseValue = document.getElementById("value-sse");
+      text = sseValue ? sseValue.textContent : "http://127.0.0.1:8765/sse";
+    } else if (kind === "config") {
+      var snippet = document.getElementById("codex-config-snippet");
+      text = snippet ? snippet.textContent : "";
+    }
+    var original = button.textContent;
+    function report(ok) {
+      button.textContent = ok ? "Copied" : "Copy failed";
+      setTimeout(function () { button.textContent = original; }, 1000);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(
+        function () { report(true); },
+        function () { report(fallbackCopy(text)); });
+    } else {
+      report(fallbackCopy(text));
+    }
+  }
+
+  function loadIntegrations() {
+    /* Integrations status (Block 16): read-only facts from the
+       server — never a key. A static export has no server, so a
+       failed fetch leaves the honest static defaults in place:
+       "Not connected" / "Fake (tests only)", never an error. */
+    fetch("/api/integrations", {cache: "no-store"}).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error("no integrations API")); })
+      .then(function (data) {
+        var classFor = (window.HIVEMIND_INTEGRATIONS || {}).statusClassFor;
+        function setRow(valueId, statusId, valueText, statusWord) {
+          var valueEl = document.getElementById(valueId);
+          if (valueEl) valueEl.textContent = valueText;
+          var statusEl = document.getElementById(statusId);
+          if (statusEl) {
+            statusEl.textContent = statusWord;
+            var cls = classFor ? classFor(statusWord) : "status-off";
+            statusEl.className = "integration-status " + cls;
+          }
+        }
+        if (data.mcp_stdio) setRow("value-stdio", "status-stdio", data.mcp_stdio.command, data.mcp_stdio.status);
+        if (data.mcp_sse) setRow("value-sse", "status-sse", data.mcp_sse.url, data.mcp_sse.status);
+        if (data.model) {
+          var modelText = data.model.base_url + " · " + data.model.model;
+          if (!data.model.key_present && data.model.key_required) modelText += " · key missing";
+          if (data.model.key_present) modelText += " · key set";
+          setRow("value-model", "status-model", modelText, data.model.status);
+        }
+        if (data.supabase) {
+          setRow("value-supabase", "status-supabase", data.supabase.bucket, data.supabase.status);
+        }
+        if (data.exp) {
+          setRow("value-exp", "status-exp", data.exp.events + " healthy actions", "Local only");
+        }
+      })
+      .catch(function () { /* no server: keep the static defaults */ });
+  }
+
   function loadData() {
     loadExp();
+    loadIntegrations();
     // Live data first: the GUI server's /api/memories endpoint reads
     // the real Store, so seeding the Store shows up on Refresh. Only
     // if there is no server (static export / file://) fall back to a

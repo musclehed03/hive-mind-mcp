@@ -2,7 +2,8 @@
 
 Serves the static GUI in gui/ plus live JSON endpoints backed by
 the local Store: /api/memories (graph payload), /api/changelog,
-and /api/exp (Block 11 EXP totals, read-only). Nothing polls: the
+/api/exp (Block 11 EXP totals, read-only), and /api/integrations
+(Block 16 Integrations status, read-only, no secrets). Nothing polls: the
 GUI fetches once on load and on explicit refresh. This server is
 optional — the GUI also works from a static export
 (gui/data.json) with no server at all. Not used by any test that
@@ -18,6 +19,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from .exp import record_startup_endpoints, totals as exp_totals
 from .gui_export import export_data
+from .integrations import status as integrations_status
 from .store import Store
 
 
@@ -32,6 +34,14 @@ class _Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):  # noqa: N802 - http.server naming
+        if self.path == "/api/integrations":
+            store = Store()
+            try:
+                data = integrations_status(store.vault_dir)
+            finally:
+                store.close()
+            self._send(200, json.dumps(data).encode("utf-8"), "application/json")
+            return
         if self.path == "/api/exp":
             store = Store()
             try:

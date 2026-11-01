@@ -251,8 +251,16 @@ def test_store_recall_empty_query_returns_recent(store):
 # Authorization header wording, live files only). If this revision
 # is ever widened beyond the two live files, the guard has been
 # weakened and must be restored.
+#
+# Revised once more for Block 16 (Integrations status): stdlib
+# urllib is allowed in exactly one more file, app/integrations.py,
+# whose ONLY network use is a short-timeout localhost health check
+# of the SSE server (127.0.0.1:8765). It makes no remote call, and
+# a dedicated assertion below pins the localhost-only property.
+# Widening beyond these three files weakens the guard.
 
 _LIVE_NETWORK_FILES = {"live_meta.py", "live_supabase.py"}
+_LOCALHOST_PROBE_FILES = {"integrations.py"}
 
 
 def test_no_network_or_secret_code_in_app():
@@ -262,7 +270,7 @@ def test_no_network_or_secret_code_in_app():
         if not fname.endswith(".py"):
             continue
         src = open(os.path.join(app_dir, fname)).read()
-        if fname not in _LIVE_NETWORK_FILES:
+        if fname not in _LIVE_NETWORK_FILES and fname not in _LOCALHOST_PROBE_FILES:
             for banned in ("httpx", "requests.", "urllib.request", "socket.",
                            "http.client", "urlopen", "socket"):
                 assert banned not in src, (fname, banned)

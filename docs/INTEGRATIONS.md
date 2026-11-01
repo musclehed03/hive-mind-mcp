@@ -73,6 +73,19 @@ Check it is listed:
 claude mcp list
 ```
 
+### Codex (terminal)
+
+Codex reads MCP servers from `~/.codex/config.toml`. Add this
+block, replacing `ABSOLUTE_PATH_TO_HIVE_MIND_MCP` with the
+absolute path of this repo folder, then restart Codex:
+
+```toml
+[mcp_servers.hive-mind]
+command = "python"
+args = ["-m", "app.mcp_server"]
+cwd = "ABSOLUTE_PATH_TO_HIVE_MIND_MCP"
+```
+
 ### Claude Desktop
 
 Add to `claude_desktop_config.json` (macOS:
