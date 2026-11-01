@@ -36,8 +36,17 @@ endpoint, model, and headers are the documented defaults; the
 endpoint and model are configurable via
 ``HIVE_MIND_META_BASE_URL`` / ``HIVE_MIND_META_MODEL`` because the
 repo and its docs do not pin them beyond the defaults stated here.
-If Meta rejects a field, adjust the configuration — do not guess a
-different API. No other Meta endpoint is called from this codebase.
+``base_url`` is the OpenAI-compatible API root (the ``/v1`` root,
+not the full ``/chat/completions`` path), so the same code path
+serves any OpenAI-compatible endpoint: Ollama's local root
+(``http://localhost:11434/v1``), OpenRouter, OpenWebUI's
+OpenAI-compatible root, or the Meta default. The scrubber, the
+5-call budget, and the error-dict contract apply identically to
+every endpoint; only the key the endpoint expects changes, and
+that key is still read from ``META_API_KEY`` in the environment
+only. If an endpoint rejects a field, adjust the configuration
+— do not guess a different API. No other endpoint is called from
+this codebase.
 """
 
 import json

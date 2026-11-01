@@ -80,6 +80,10 @@
       root.style.setProperty("--border", palette.border);
       root.style.setProperty("--node", palette.node);
       root.style.setProperty("--edge", palette.edge);
+      /* --metal exists only on the Variant A default palette; other
+         palettes fall back to their border colour, so the 1px header
+         pinstripe never introduces a colour a palette did not pick. */
+      root.style.setProperty("--metal", palette.metal || palette.border);
     }
     root.style.setProperty("--font-scale", (state.text_scale / 100).toFixed(2));
     root.style.setProperty("--line-height", String(state.line_height));
@@ -387,6 +391,21 @@
     var status = document.getElementById("graph-status");
     if (!canvas || !list) return;
     layout(graphData.nodes);
+    /* Growth stage (Block 10): derived from the live node list —
+       total count picks the stage, checked facts brighten it. The
+       label is the source of truth; canvas density/scale are
+       decorative echoes of the same numbers. */
+    var stageApi = window.HIVEMIND_STAGE || null;
+    var verifiedCount = stageApi ? stageApi.countVerified(graphData.nodes) : 0;
+    var stage = stageApi ? stageApi.stageFor(graphData.nodes.length, verifiedCount) : null;
+    var stageEl = document.getElementById("growth-stage");
+    if (stageEl && stage) {
+      var nextText = stage.nextMin === null
+        ? "Full-grown."
+        : "Next: " + stage.nextName + " at " + stage.nextMin + " memories.";
+      stageEl.textContent = "Growth stage: " + stage.name + " — " + stage.description +
+        " (" + stage.count + " memories, " + stage.verifiedCount + " checked.) " + nextText;
+    }
     if (state.metaphor === "nebula") {
       canvas.style.display = "block"; if (svg) svg.style.display = "none";
       var ctx = canvas.getContext("2d");
@@ -405,20 +424,48 @@
          what shows through it. */
       var styles = getComputedStyle(document.body);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = styles.getPropertyValue("--bg").trim() || "#14101c";
+      ctx.fillStyle = styles.getPropertyValue("--bg").trim() || "#080609";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+      /* Faint dust behind the nodes: deterministic positions from a
+         hash of the index (no Math.random, so the picture is stable
+         across redraws), count and brightness from the stage. Dust
+         is decoration only — the stage label carries the meaning. */
+      var dustCount = stage ? stage.dust : 12;
+      var dustAlpha = 0.10 + 0.20 * (stage ? stage.verifiedFraction : 0);
+      ctx.save();
+      ctx.globalAlpha = dustAlpha;
+      ctx.fillStyle = styles.getPropertyValue("--text").trim() || "#ddd3d7";
+      for (var d = 0; d < dustCount; d++) {
+        var hx = ((d + 1) * 2654435761) % 600;
+        var hy = ((d + 1) * 40503) % 320;
+        ctx.beginPath();
+        ctx.arc(hx < 0 ? hx + 600 : hx, hy < 0 ? hy + 320 : hy, 1.5, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+      ctx.restore();
       // Chunked rendering: 50 nodes per animation frame, never blocking.
       var nodes = graphData.nodes.slice();
+      var nodeSize = 14 * (stage ? stage.scale : 1);
       var i = 0;
       (function drawChunk() {
         var end = Math.min(nodes.length, i + 50);
         for (; i < end; i++) {
           var node = nodes[i];
           var pos = positions[node.id];
-          drawShape(ctx, node.shape || "circle", pos.x, pos.y, 14,
-            styles.getPropertyValue("--node").trim() || "#2a2138",
-            styles.getPropertyValue("--border").trim() || "#3a2e4a");
-          ctx.fillStyle = styles.getPropertyValue("--text").trim() || "#f5edf7";
+          drawShape(ctx, node.shape || "circle", pos.x, pos.y, nodeSize,
+            styles.getPropertyValue("--node").trim() || "#120d11",
+            styles.getPropertyValue("--border").trim() || "#241d23");
+          /* Checked facts get an extra ring: verified-ness is carried
+             by shape (ring vs. no ring) and by the text list, never
+             by colour alone. */
+          if (stageApi && stageApi.isVerified(node)) {
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, nodeSize + 5, 0, 2 * Math.PI);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = styles.getPropertyValue("--edge").trim() || "#547c6d";
+            ctx.stroke();
+          }
+          ctx.fillStyle = styles.getPropertyValue("--text").trim() || "#ddd3d7";
           ctx.font = "12px sans-serif";
           ctx.fillText(node.label.slice(0, 28), pos.x + 18, pos.y + 4);
         }
@@ -429,7 +476,7 @@
         if (!a || !b) return;
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
         ctx.setLineDash(edge.line_style === "dashed" ? [6, 4] : edge.line_style === "dotted" ? [2, 4] : []);
-        ctx.strokeStyle = styles.getPropertyValue("--edge").trim() || "#8e7aa8";
+        ctx.strokeStyle = styles.getPropertyValue("--edge").trim() || "#547c6d";
         ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
       });
     } else {
@@ -468,7 +515,21 @@
     }
   }
 
+  function loadExp() {
+    /* EXP totals (Block 11): read-only, fetched with the graph data
+       and on Refresh. A static export has no server, so a failed
+       fetch leaves the default "EXP: 0" text in place — never an
+       error, never a retry loop. */
+    fetch("/api/exp", {cache: "no-store"}).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error("no EXP API")); })
+      .then(function (data) {
+        var el = document.getElementById("exp-meter");
+        if (el) el.textContent = "EXP: " + data.total + " — " + data.events + " healthy actions (checked facts, settled mix-ups, backups). Points never cost money.";
+      })
+      .catch(function () { /* no server: keep the default text */ });
+  }
+
   function loadData() {
+    loadExp();
     // Live data first: the GUI server's /api/memories endpoint reads
     // the real Store, so seeding the Store shows up on Refresh. Only
     // if there is no server (static export / file://) fall back to a

@@ -15,6 +15,7 @@ import os
 
 from .capture import capture_idea, query_temporal
 from .crosshatch import crosshatch_verify
+from .exp import record_event
 from .explain import explain
 from .live_clients import get_meta_client, get_snapshot_adapter
 from .microbot import spawn_microbot
@@ -67,15 +68,37 @@ def _query_handler(arguments, store):
     )
 
 
+def _record_exp(store, kind):
+    """Record one EXP event. Never breaks the tool call: EXP errors
+    are swallowed here, so a full disk or a bad vault path can
+    never turn a successful verification or backup into an error.
+    """
+    try:
+        record_event(store.vault_dir, kind)
+    except Exception:
+        pass
+
+
 def _verify_handler(arguments, store):
     # The meta client comes from the env-gated factory: fake by
     # default, live only when HIVE_MIND_LIVE=1 and a key is present.
-    return crosshatch_verify(
+    store = store if store is not None else get_store()
+    payload = crosshatch_verify(
         arguments["candidate_fact"], arguments["domain_repo"],
         arguments["source_citation"], arguments["supersede_id"],
-        store if store is not None else get_store(),
+        store,
         meta_client=get_meta_client(),
     )
+    # EXP (Block 11): a stored verification earns verified_recall;
+    # settling a conflict by explicit supersede earns
+    # contradiction_resolved. A refused conflict earns nothing —
+    # it is not resolved yet. Same points, fake or live client:
+    # EXP never rewards API spend.
+    if payload.get("status") == "verified":
+        _record_exp(store, "verified_recall")
+    elif payload.get("status") == "superseded":
+        _record_exp(store, "contradiction_resolved")
+    return payload
 
 
 def _prune_handler(arguments, store):
@@ -101,12 +124,18 @@ def _snapshot_handler(arguments, store):
     # Adapter from the env-gated factory: None (local-only mode) by
     # default, a live Supabase adapter only when HIVE_MIND_LIVE=1
     # and Supabase credentials are present in the environment.
-    return snapshot_backup(
+    store = store if store is not None else get_store()
+    payload = snapshot_backup(
         arguments["destination_target"], arguments["schedule_interval"],
         arguments["user_handshake_token"],
-        store if store is not None else get_store(),
+        store,
         adapter=get_snapshot_adapter(arguments["destination_target"]),
     )
+    # EXP (Block 11): a snapshot whose verified callback passed
+    # earns snapshot_backed_up, cloud upload or local-only alike.
+    if payload.get("status") in ("ok", "local_only") and payload.get("verified_callback"):
+        _record_exp(store, "snapshot_backed_up")
+    return payload
 
 
 def dispatch_tool(name, arguments, store=None):

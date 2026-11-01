@@ -1,11 +1,19 @@
 /* Hive-Mind settings data: typed colour-blind palettes + one-tap profiles.
-   Values below are GUI defaults for this app. The canonical Deluxe Posh
-   palette tokens live in the Dollhouse Deviants website repo; these
-   values are not presented as those canonical tokens. The achromatopsia
-   palette is pure grayscale (every colour has R == G == B) by design.
-   Objects are written as strict JSON so tests can parse them. */
+   The "default" palette IS the canonical Deluxe Posh / Mature palette,
+   Variant A (Velvet Boudoir & Brushed Gold), dark tokens, from the
+   Dollhouse Deviants website repo draft PR #4
+   (src/theme/posh-mature-palette.css, branch posh-mature-app-palette):
+   background/card map to bg/card, accent to primary, edge to
+   secondary, and metal is the brushed-gold mid stop, used ONLY as a
+   1px pinstripe (see styles.css). The light tokens from the same
+   variant live in the body.light-theme rule in styles.css. The
+   muted token (#a1969e) exists in the canonical file but the GUI
+   has no muted-text slot, so it is not repeated here. The
+   achromatopsia palette is pure grayscale (every colour has
+   R == G == B) by design. Objects are written as strict JSON so
+   tests can parse them. */
 const HIVEMIND_PALETTES = {
-  "default": {"label": "Default (Deluxe Posh)", "background": "#14101c", "text": "#f5edf7", "accent": "#c86dd7", "border": "#3a2e4a", "node": "#2a2138", "edge": "#8e7aa8", "grayscale": false},
+  "default": {"label": "Default (Deluxe Posh, Variant A)", "background": "#080609", "text": "#ddd3d7", "accent": "#ad3375", "border": "#241d23", "node": "#120d11", "edge": "#547c6d", "metal": "#a8891f", "grayscale": false},
   "deuteranomaly": {"label": "Deuteranomaly", "background": "#101418", "text": "#f2f2f2", "accent": "#e69f00", "border": "#4a4a4a", "node": "#1c242c", "edge": "#56b4e9", "grayscale": false},
   "protanomaly": {"label": "Protanomaly", "background": "#101418", "text": "#f2f2f2", "accent": "#009e73", "border": "#4a4a4a", "node": "#1c242c", "edge": "#e69f00", "grayscale": false},
   "deuteranopia": {"label": "Deuteranopia", "background": "#0f1216", "text": "#ffffff", "accent": "#e69f00", "border": "#5a5a5a", "node": "#1a2028", "edge": "#56b4e9", "grayscale": false},

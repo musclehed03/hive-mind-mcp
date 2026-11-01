@@ -32,6 +32,8 @@
       <canvas id="graph-canvas" role="img" aria-label="Knowledge graph canvas: nodes are drawn as circles, squares, and triangles by domain, with solid, dashed, and dotted lines for relationships. A text list of all nodes follows."></canvas>
       <svg class="graph" id="graph-svg" role="img" aria-label="Knowledge graph, alternate view" style="display:none"><title>Knowledge graph, alternate view</title><g id="svg-nodes"></g></svg>
     </div>
+    <p id="growth-stage" aria-live="polite" data-tooltip="How grown your memory sky is. More memories, and more checked facts, make it brighter.">Growth stage: Nebula — a young cloud, still gathering.</p>
+    <div id="exp-meter" aria-live="polite" data-tooltip="Points you earn for keeping your memories healthy: checked facts, settled mix-ups, and backups. Points never cost money and never buy anything.">EXP: 0</div>
     <p id="graph-status" aria-live="polite">Loading graph data…</p>
     <h3>All memories, as text</h3>
     <ul id="node-list" class="node-list" aria-label="All memories in the graph"></ul>
@@ -142,6 +144,8 @@
       <li>The token meter counts how much work the app has done. Your token budget is the most work it may do for one answer. Bigger answers use more tokens.</li>
       <li>The micro-bot is a small helper. Simple mode writes you a short morning summary. Pro mode watches for changes and only acts within the spending limit you set.</li>
       <li>The Accessibility Suite only changes how the page looks and reads: colours, text size, spacing, and movement. It never deletes or changes your memories.</li>
+      <li>Growth stage is how grown your memory sky is. A Nebula becomes a Protostar, then a Star, then a Radiant Sun as you add memories and check facts. The stage is always written out in words next to the picture.</li>
+      <li>EXP is points for keeping memories healthy: checked facts, settled mix-ups, and backups. EXP never costs money and never buys anything.</li>
       <li>If anything ever looks wrong, press Reset accessibility settings to go back to the starting look.</li>
     </ul>
   </section>
@@ -151,6 +155,7 @@
   <img src="logo.svg" alt="" width="24" height="24" aria-hidden="true">
 </footer>
 <script src="settings-data.js"></script>
+<script src="stage.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

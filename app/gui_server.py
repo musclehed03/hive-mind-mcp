@@ -1,9 +1,10 @@
 """Optional GUI server (Block 6): stdlib only, localhost only.
 
-Serves the static GUI in gui/ plus two live JSON endpoints backed by
-the local Store: /api/memories (graph payload) and /api/changelog.
-Nothing polls: the GUI fetches once on load and on explicit refresh.
-This server is optional — the GUI also works from a static export
+Serves the static GUI in gui/ plus live JSON endpoints backed by
+the local Store: /api/memories (graph payload), /api/changelog,
+and /api/exp (Block 11 EXP totals, read-only). Nothing polls: the
+GUI fetches once on load and on explicit refresh. This server is
+optional — the GUI also works from a static export
 (gui/data.json) with no server at all. Not used by any test that
 needs the MCP server; the server test starts it on an ephemeral
 localhost port and shuts it down.
@@ -15,6 +16,7 @@ import mimetypes
 import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+from .exp import record_startup_endpoints, totals as exp_totals
 from .gui_export import export_data
 from .store import Store
 
@@ -30,6 +32,14 @@ class _Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):  # noqa: N802 - http.server naming
+        if self.path == "/api/exp":
+            store = Store()
+            try:
+                data = exp_totals(store.vault_dir)
+            finally:
+                store.close()
+            self._send(200, json.dumps(data).encode("utf-8"), "application/json")
+            return
         if self.path in ("/api/memories", "/api/changelog"):
             store = Store()
             try:
@@ -65,6 +75,14 @@ def main(argv=None):
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)
     args = parser.parse_args(argv)
+    # EXP (Block 11): a live-configured endpoint earns its one-time
+    # endpoint_attached points when the server starts. Never blocks
+    # startup: record_startup_endpoints swallows its own errors.
+    _startup_store = Store()
+    try:
+        record_startup_endpoints(_startup_store.vault_dir)
+    finally:
+        _startup_store.close()
     server = ThreadingHTTPServer((args.host, args.port), _Handler)
     print(f"Hive-Mind GUI at http://{args.host}:{args.port}/ (localhost only)")
     try:

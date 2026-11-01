@@ -2,12 +2,15 @@
    frames, dashed = secondary tags/links, dotted = tertiary controls.
    Meaning is never carried by colour alone: shapes + line styles do
    that work, so the pure-grayscale mode keeps full hierarchy.
-   Default palette is the Deluxe Posh / Mature palette. The typed
-   colour-blind palettes in settings-data.js override these
-   variables at load. */
+   Default palette is the Deluxe Posh / Mature palette, Variant A
+   (Velvet Boudoir & Brushed Gold), dark tokens — the same values
+   as the "default" palette in settings-data.js. The typed
+   colour-blind palettes override these variables at load. --metal
+   is the brushed-gold mid stop, used ONLY for the 1px pinstripe
+   on the header, per the PR #4 direction (metal sparingly). */
 :root {
-  --bg: #14101c; --text: #f5edf7; --accent: #c86dd7; --border: #3a2e4a;
-  --node: #2a2138; --edge: #8e7aa8;
+  --bg: #080609; --text: #ddd3d7; --accent: #ad3375; --border: #241d23;
+  --node: #120d11; --edge: #547c6d; --metal: #a8891f;
   --font-scale: 1; --line-height: 1.5; --letter-spacing: 0.02em;
   --saturation: 100%;
   --radius: 14px;
@@ -19,7 +22,10 @@ body {
   font-size: calc(16px * var(--font-scale));
   line-height: var(--line-height); letter-spacing: var(--letter-spacing);
 }
-body.light-theme { --bg: #faf7fb; --text: #1a1424; --node: #ffffff; --border: #6b5a80; }
+/* Variant A light tokens (same canonical PR #4 file): the light
+   theme keeps the darkened-orchid primary and dark-teal secondary,
+   on the light ground. --node is the light card. */
+body.light-theme { --bg: #dcd2d5; --text: #211820; --accent: #7c254f; --border: #32262d; --node: #ece5e7; --edge: #1f483f; --metal: #a8891f; }
 body.high-contrast { --bg: #000000; --text: #ffffff; --accent: #ffd400; --border: #ffffff; --edge: #ffffff; }
 body.readable-font { font-family: "Atkinson Hyperlegible", Verdana, sans-serif; }
 body.bold-text { font-weight: 700; }
@@ -54,8 +60,9 @@ header {
   display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
   margin: 20px 12px 4px; padding: 20px 24px;
   border: 2px solid var(--border); border-bottom: 3px solid var(--accent);
+  border-top: 1px solid var(--metal);
   border-radius: var(--radius);
-  background: linear-gradient(135deg, #2a2138 0%, #14101c 60%);
+  background: linear-gradient(135deg, #120d11 0%, #080609 60%);
 }
 header img { flex: 0 0 auto; }
 header .header-text { flex: 1 1 320px; }
@@ -114,7 +121,7 @@ canvas, svg.graph { width: 100%; height: 340px; display: block; }
 /* The canvas background matches the page background, so canvas
    labels always sit on the colour they were drawn against. */
 canvas { background: var(--bg); }
-#reading-guide { position: fixed; left: 0; right: 0; height: 2em; background: rgba(200, 109, 215, 0.25); border-top: 2px solid var(--accent); border-bottom: 2px solid var(--accent); pointer-events: none; display: none; z-index: 50; }
+#reading-guide { position: fixed; left: 0; right: 0; height: 2em; background: rgba(173, 51, 117, 0.25); border-top: 2px solid var(--accent); border-bottom: 2px solid var(--accent); pointer-events: none; display: none; z-index: 50; }
 body.reading-guide #reading-guide { display: block; }
 /* Fast custom tooltip (standing SOP: ~500ms, snap up). One shared
    element, positioned by app.js. It uses the page's own CSS
@@ -133,6 +140,8 @@ body.reading-guide #reading-guide { display: block; }
 #hivemind-tooltip[hidden] { display: none; }
 #diff-toast { border: 2px dashed var(--accent); border-radius: var(--radius); padding: 10px 12px; margin: 12px 0 0; }
 #token-meter { border: 2px dotted var(--border); border-radius: var(--radius); padding: 10px 12px; margin: 12px 0 0; }
+#growth-stage { border: 2px solid var(--border); border-radius: var(--radius); padding: 10px 12px; margin: 12px 0 0; }
+#exp-meter { border: 2px dotted var(--accent); border-radius: var(--radius); padding: 10px 12px; margin: 12px 0 0; }
 #graph-status { margin: 10px 0 0; }
 .node-list { columns: 2; column-gap: 24px; padding-left: 20px; }
 .node-list li { break-inside: avoid; margin-bottom: 6px; }
