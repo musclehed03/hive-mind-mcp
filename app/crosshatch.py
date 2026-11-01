@@ -169,6 +169,10 @@ def crosshatch_verify(candidate_fact, domain_repo, source_citation,
 
     provenance = trust_signals(source_citation, live=is_live,
                                model=check.get("model"))
+    # Origin (Block 17): name the model that actually verified the
+    # fact, live or fake, as its own additive key. The `verified_by`
+    # wording above is left untouched — Block 4 tests pin it.
+    provenance["verified_by_model"] = check.get("model") or ""
     provenance["scrubbed"] = scrubbed["trapped_count"] > 0
     if is_live:
         provenance["live_verdict"] = check["verdict"]

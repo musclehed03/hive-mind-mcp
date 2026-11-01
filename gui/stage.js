@@ -290,6 +290,148 @@
     return {text: fitted, x: geo.x, y: y, box: box};
   }
 
+  /* Origin colours + ring patterns (Block 17). Every memory
+     carries an origin label (which model, client, or coder made
+     it — see app/origin.py). The map shows the origin two ways
+     at once, so colour is never the only carrier: a user-assignable
+     ring colour AND a ring pattern that cycles solid / dashed /
+     dotted / double by first-seen order. The pattern is purely
+     index-based — it never reads a colour variable — so in
+     achromatopsia mode, where the page filter collapses every
+     colour to grey, the patterns, the legend, and the text list
+     keep the full meaning. Default colours are derived from the
+     active palette itself (accent, edge, and muted mixes of the
+     two), never hardcoded neon: Posh direction, orchid/wine/teal
+     family. All helpers here are pure so tests can execute them
+     for real; app.js supplies the palette values it reads from
+     the page's own CSS variables. */
+  var ORIGIN_PATTERNS = ["solid", "dashed", "dotted", "double"];
+  var ORIGIN_FALLBACK_PALETTE = {
+    accent: "#ad3375", edge: "#547c6d", text: "#ddd3d7",
+    bg: "#080609", metal: "#a8891f", border: "#241d23"
+  };
+
+  function parseColour(value) {
+    var text = String(value || "").trim();
+    var hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(text);
+    if (hex) {
+      var h = hex[1];
+      if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+      return {
+        r: parseInt(h.slice(0, 2), 16),
+        g: parseInt(h.slice(2, 4), 16),
+        b: parseInt(h.slice(4, 6), 16)
+      };
+    }
+    var rgb = /^rgba?\((\d+),\s*(\d+),\s*(\d+)/i.exec(text);
+    if (rgb) {
+      return {
+        r: Math.min(255, Number(rgb[1])),
+        g: Math.min(255, Number(rgb[2])),
+        b: Math.min(255, Number(rgb[3]))
+      };
+    }
+    return null;
+  }
+
+  function toHex(rgb) {
+    function part(n) {
+      var s = Math.max(0, Math.min(255, Math.round(n))).toString(16);
+      return s.length === 1 ? "0" + s : s;
+    }
+    return "#" + part(rgb.r) + part(rgb.g) + part(rgb.b);
+  }
+
+  function mixHex(first, second, t) {
+    var a = parseColour(first), b = parseColour(second);
+    if (!a) return toHex(parseColour(second) || {r: 0, g: 0, b: 0});
+    if (!b) return toHex(a);
+    return toHex({
+      r: a.r + (b.r - a.r) * t,
+      g: a.g + (b.g - a.g) * t,
+      b: a.b + (b.b - a.b) * t
+    });
+  }
+
+  function paletteValue(palette, key) {
+    var value = palette && palette[key];
+    var parsed = parseColour(value);
+    if (parsed) return toHex(parsed);
+    return ORIGIN_FALLBACK_PALETTE[key];
+  }
+
+  /* Default ring colour for the origin at `index` (first-seen
+     order): accent, edge, muted accent, metal, deepened edge,
+     deepened accent, then cycling. Every default is a palette
+     value or a mix of two palette values. */
+  function originColourFor(index, palette) {
+    var p = palette || {};
+    var accent = paletteValue(p, "accent");
+    var edge = paletteValue(p, "edge");
+    var text = paletteValue(p, "text");
+    var bg = paletteValue(p, "bg");
+    var metal = parseColour(p.metal) ? toHex(parseColour(p.metal)) : null;
+    var bases = [
+      accent,
+      edge,
+      mixHex(accent, text, 0.45),
+      metal || mixHex(accent, edge, 0.5),
+      mixHex(edge, bg, 0.45),
+      mixHex(accent, bg, 0.4)
+    ];
+    var i = ((Math.floor(Number(index) || 0)) % bases.length + bases.length) % bases.length;
+    return bases[i];
+  }
+
+  function originPattern(index) {
+    var i = ((Math.floor(Number(index) || 0)) % ORIGIN_PATTERNS.length + ORIGIN_PATTERNS.length) % ORIGIN_PATTERNS.length;
+    return ORIGIN_PATTERNS[i];
+  }
+
+  /* Canvas dash for a pattern: solid and double draw solid
+     strokes (double adds a second outline in app.js); dashed
+     and dotted use dash arrays. Pure index logic — no colours. */
+  function patternDash(pattern) {
+    if (pattern === "dashed") return [6, 4];
+    if (pattern === "dotted") return [2, 4];
+    return [];
+  }
+
+  function originOf(node) {
+    return (node && node.origin) || "unknown origin";
+  }
+
+  /* Origins of one canvas group, first-seen order: a group that
+     mixes origins lists each of them; the legend carries the
+     detail while the canvas ring uses the first. */
+  function groupOrigins(group) {
+    var seen = {};
+    var out = [];
+    var members = (group && group.members) || [];
+    if (!members.length && group && group.representative) members = [group.representative];
+    members.forEach(function (member) {
+      var origin = originOf(member);
+      if (!seen[origin]) { seen[origin] = true; out.push(origin); }
+    });
+    return out.length ? out : ["unknown origin"];
+  }
+
+  /* Legend data from every memory (NOT groups): each origin's
+     memory count, in first-seen order, with its ring pattern.
+     Grouping never hides an origin from the legend. */
+  function legendEntries(nodes) {
+    var counts = {};
+    var order = [];
+    (nodes || []).forEach(function (node) {
+      var origin = originOf(node);
+      if (!(origin in counts)) { counts[origin] = 0; order.push(origin); }
+      counts[origin] += 1;
+    });
+    return order.map(function (origin, i) {
+      return {origin: origin, count: counts[origin], pattern: originPattern(i), patternIndex: i};
+    });
+  }
+
   /* Integrations status words (Block 16): the CSS class for a
      status word, so status is carried by border style as well as
      by the printed word — never by colour alone. Pure function,
@@ -303,6 +445,19 @@
     if (statusWord === "Fake (tests only)") return "status-fake";
     return "status-local";
   }
+
+  /* Origin colours + patterns (Block 17): exposed on their own
+     handle so app.js can keep the graph helpers untouched. */
+  window.HIVEMIND_ORIGINS = {
+    originColourFor: originColourFor,
+    originPattern: originPattern,
+    patternDash: patternDash,
+    originOf: originOf,
+    groupOrigins: groupOrigins,
+    legendEntries: legendEntries,
+    mixHex: mixHex,
+    parseColour: parseColour
+  };
 
   window.HIVEMIND_STAGE = {
     STAGES: STAGES,

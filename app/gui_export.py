@@ -15,6 +15,7 @@ import os
 from datetime import datetime, timezone
 
 from .caveman import temporal_bucket
+from .origin import origin_label
 from .store import Store
 
 _SHAPES = ("circle", "square", "triangle")
@@ -41,6 +42,10 @@ def export_data(store):
             "source": mem["source"],
             "entities": mem["entities"],
             "provenance": mem["provenance"],
+            # Origin (Block 17): which model/client/coder made this
+            # memory, from recorded values only — the legend and
+            # the text list show this label verbatim.
+            "origin": origin_label(mem["provenance"], mem["source"]),
         })
     edges = []
     entity_to_ids = {}

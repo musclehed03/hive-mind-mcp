@@ -52,11 +52,12 @@ def _scrub_handler(arguments, store):
     }
 
 
-def _capture_handler(arguments, store):
+def _capture_handler(arguments, store, client_name=None):
     return capture_idea(
         arguments["content"], arguments["source_type"],
         arguments["domain_hint"], arguments["client_id"],
         store if store is not None else get_store(),
+        client_name=client_name,
     )
 
 
@@ -138,8 +139,14 @@ def _snapshot_handler(arguments, store):
     return payload
 
 
-def dispatch_tool(name, arguments, store=None):
-    """Dispatch one tool call. Returns (payload_dict, is_error_bool)."""
+def dispatch_tool(name, arguments, store=None, client_name=None):
+    """Dispatch one tool call. Returns (payload_dict, is_error_bool).
+
+    ``client_name`` is the MCP client's own name from its
+    ``initialize`` clientInfo (Block 17, best-effort): it is
+    recorded in capture provenance only, and never affects any
+    tool's behaviour or arguments.
+    """
     tool = get_tool(name)
     if tool is None:
         raise KeyError(f"unknown tool: {name!r}")
@@ -149,7 +156,10 @@ def dispatch_tool(name, arguments, store=None):
     try:
         # Handlers that need a store call get_store() themselves when
         # passed None, so read-only handlers (scrub) never create one.
-        payload = handler(arguments, store)
+        if name == "hivemind_capture_idea":
+            payload = handler(arguments, store, client_name)
+        else:
+            payload = handler(arguments, store)
     except ValueError as exc:
         return {"status": "error", "tool": name, "error": str(exc)}, True
     if isinstance(payload, dict) and payload.get("status") == "error":

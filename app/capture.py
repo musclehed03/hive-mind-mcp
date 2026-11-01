@@ -72,8 +72,15 @@ def route_domain(domain_hint, content):
     return primary, cross
 
 
-def capture_idea(content, source_type, domain_hint, client_id, store):
-    """Capture one idea. Only scrubbed text ever reaches the store."""
+def capture_idea(content, source_type, domain_hint, client_id, store,
+                 client_name=None):
+    """Capture one idea. Only scrubbed text ever reaches the store.
+
+    ``client_name`` is the MCP client's own name from its
+    ``initialize`` clientInfo (Block 17), recorded additively in
+    provenance when the dispatcher knows it. Direct callers that
+    pass none keep the old provenance shape exactly.
+    """
     if not content or not content.strip():
         raise ValueError("content must not be empty")
     if source_type not in ("text", "voice", "clipper"):
@@ -95,6 +102,8 @@ def capture_idea(content, source_type, domain_hint, client_id, store):
         "cross_domains": cross,
         "scrubbed": scrubbed["trapped_count"] > 0,
     }
+    if client_name:
+        provenance["client_name"] = client_name
     mid = store.remember(
         scrubbed["scrubbed_text"], entities=entities, source=source,
         domain=primary, provenance=provenance,

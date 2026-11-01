@@ -46,10 +46,16 @@ _HEARTBEAT_SECONDS = 25
 
 
 class _Session:
-    """One open event stream, fed by a queue the POST side fills."""
+    """One open event stream, fed by a queue the POST side fills.
+
+    ``client_context`` is this connection's own dict for the
+    `initialize` clientInfo name (Block 17): one per session, so
+    two clients connected at once never share a name.
+    """
 
     def __init__(self):
         self.messages = queue.Queue()
+        self.client_context = {}
 
 
 _SESSIONS = {}
@@ -158,7 +164,7 @@ class _SSEHandler(BaseHTTPRequestHandler):
                         "error": {"code": -32700,
                                   "message": "Parse error: expected one JSON object"}}
         else:
-            response = handle_request(request)
+            response = handle_request(request, session.client_context)
         if response is not None:
             session.messages.put(json.dumps(response))
         self.send_response(202)

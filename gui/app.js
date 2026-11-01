@@ -10,9 +10,9 @@
   var SAMPLE_DATA = {
     live: false,
     nodes: [
-      {id: "sample-1", label: "Shop opens at 9am on Saturdays", text: "Shop opens at 9am on Saturdays", domain: "general", shape: "circle", created_at: "2026-10-27T00:00:00Z", temporal_bucket: "recent_0_3m", source: "sample", entities: ["Shop"], provenance: {}},
-      {id: "sample-2", label: "Shop sells fresh bread", text: "Shop sells fresh bread", domain: "cooking", shape: "square", created_at: "2026-10-27T00:00:00Z", temporal_bucket: "recent_0_3m", source: "sample", entities: ["Shop"], provenance: {}},
-      {id: "sample-3", label: "Code the server in Python", text: "Code the server in Python", domain: "coding", shape: "triangle", created_at: "2026-10-27T00:00:00Z", temporal_bucket: "recent_0_3m", source: "sample", entities: [], provenance: {}}
+      {id: "sample-1", label: "Shop opens at 9am on Saturdays", text: "Shop opens at 9am on Saturdays", domain: "general", shape: "circle", created_at: "2026-10-27T00:00:00Z", temporal_bucket: "recent_0_3m", source: "sample", entities: ["Shop"], provenance: {}, origin: "text · sonja"},
+      {id: "sample-2", label: "Shop sells fresh bread", text: "Shop sells fresh bread", domain: "cooking", shape: "square", created_at: "2026-10-27T00:00:00Z", temporal_bucket: "recent_0_3m", source: "sample", entities: ["Shop"], provenance: {}, origin: "clipper · example.com"},
+      {id: "sample-3", label: "Code the server in Python", text: "Code the server in Python", domain: "coding", shape: "triangle", created_at: "2026-10-27T00:00:00Z", temporal_bucket: "recent_0_3m", source: "sample", entities: [], provenance: {}, origin: "verified by muse-spark-1.3"}
     ],
     edges: [{from: "sample-1", to: "sample-2", kind: "shared-entity", line_style: "solid", label: "Shop"}],
     changelog: []
@@ -28,15 +28,16 @@
     snapshot_schedule: "7d", backup_destination: "supabase",
     token_budget: 200, reading_level: "plain", microbot_mode: "simple",
     palette_choice: "posh", sound: false, notifications: false,
-    tooltips_enabled: true,
+    tooltips_enabled: true, origin_colours: {},
     active_profile: ""
   };
   /* Accessibility keys vs. everything else: "Reset accessibility
      settings" and applying/toggling a profile must only ever touch
      the accessibility keys. Regular Settings (graph, snapshot,
-     token budget, sound, notifications, tooltips) survive a reset
-     and survive profile changes. tooltips_enabled is a Regular
-     Setting, so it is deliberately NOT in this list. */
+     token budget, sound, notifications, tooltips, origin colours)
+     survive a reset and survive profile changes. tooltips_enabled
+     and origin_colours are Regular Settings, so they are
+     deliberately NOT in this list. */
   var ACCESSIBILITY_KEYS = [
     "focus_mode", "safe_motion", "readable_font", "high_contrast",
     "light_theme", "simplified", "bold", "underline_links",
@@ -262,17 +263,25 @@
       showTooltip(target);
     }, TOOLTIP_DELAY_MS);
   }
+  /* One element's tooltip wiring, guarded so a second bind is a
+     no-op: the static page binds once at startup, and the
+     origin-colour rows added later (Block 17) bind each new
+     colour input as it is created. Same delay, same hiding
+     rules, no duplicates. */
+  function bindTooltipElement(el) {
+    if (!el || el.__hivemindTooltipBound) return;
+    el.__hivemindTooltipBound = true;
+    el.addEventListener("mouseenter", function () { scheduleTooltip(el); });
+    el.addEventListener("mouseleave", hideTooltip);
+    el.addEventListener("focus", function () { scheduleTooltip(el); });
+    el.addEventListener("blur", hideTooltip);
+    /* A select's own dropdown opens on click; hide the tip so it
+       never sits on top of the open list. Buttons and sliders
+       keep the tip until the pointer/keyboard leaves them. */
+    if (el.tagName === "SELECT") el.addEventListener("click", hideTooltip);
+  }
   function bindTooltips() {
-    document.querySelectorAll("[data-tooltip]").forEach(function (el) {
-      el.addEventListener("mouseenter", function () { scheduleTooltip(el); });
-      el.addEventListener("mouseleave", hideTooltip);
-      el.addEventListener("focus", function () { scheduleTooltip(el); });
-      el.addEventListener("blur", hideTooltip);
-      /* A select's own dropdown opens on click; hide the tip so it
-         never sits on top of the open list. Buttons and sliders
-         keep the tip until the pointer/keyboard leaves them. */
-      if (el.tagName === "SELECT") el.addEventListener("click", hideTooltip);
-    });
+    document.querySelectorAll("[data-tooltip]").forEach(bindTooltipElement);
     document.addEventListener("keydown", function (ev) {
       if (ev.key === "Escape") hideTooltip();
     });
@@ -338,6 +347,16 @@
       state.tooltips_enabled = !state.tooltips_enabled;
       applySettings();
       if (!state.tooltips_enabled) hideTooltip();
+    });
+    /* Origin colours (Block 17): back to palette-derived
+       defaults. Only origin_colours is cleared; every other
+       setting stays. Rows rebuild on the next render. */
+    var resetOrigins = document.getElementById("reset-origin-colours");
+    if (resetOrigins) resetOrigins.addEventListener("click", function () {
+      state.origin_colours = {};
+      lastOriginRowKey = "";
+      saveSettings();
+      renderGraph();
     });
     var slider = document.getElementById("microbot-slider-button");
     if (slider) slider.addEventListener("click", function () {
@@ -418,6 +437,131 @@
     ctx.fillStyle = fill; ctx.fill();
     ctx.lineWidth = 2; ctx.strokeStyle = stroke; ctx.stroke();
   }
+  /* Stroke-only outline of a shape, for the "double" origin ring
+     (Block 17): a second outline a few pixels out from the first,
+     same colour, same shape — no fill, so it never covers the
+     node or its label. */
+  function drawShapeOutline(ctx, shape, x, y, size, stroke) {
+    ctx.beginPath();
+    if (shape === "square") ctx.rect(x - size, y - size, size * 2, size * 2);
+    else if (shape === "triangle") { ctx.moveTo(x, y - size); ctx.lineTo(x + size, y + size); ctx.lineTo(x - size, y + size); ctx.closePath(); }
+    else ctx.arc(x, y, size, 0, 2 * Math.PI);
+    ctx.lineWidth = 2; ctx.strokeStyle = stroke; ctx.stroke();
+  }
+
+  /* Origin colours + legend (Block 17). An origin is a plain
+     label — which model, client, or coder made the memory — and
+     the map carries it two ways at once: a ring colour the user
+     can change, and a ring pattern (solid / dashed / dotted /
+     double) fixed by first-seen order. Colour is never the only
+     carrier: the pattern, the HTML legend, and the text list
+     below the graph all name the origin in words. The pattern
+     logic lives in stage.js and never reads a colour variable,
+     so the achromatopsia greyscale filter cannot take the
+     meaning away. */
+  function originApi() { return window.HIVEMIND_ORIGINS || null; }
+  function originColoursMap() {
+    var saved = state.origin_colours;
+    if (!saved || typeof saved !== "object" || Array.isArray(saved)) return {};
+    var out = {};
+    Object.keys(saved).forEach(function (key) {
+      if (/^#[0-9a-fA-F]{6}$/.test(String(saved[key]))) out[key] = String(saved[key]);
+    });
+    return out;
+  }
+  function originOrderOf(nodes) {
+    var api = originApi();
+    var order = [];
+    (nodes || []).forEach(function (node) {
+      var origin = api ? api.originOf(node) : (node.origin || "unknown origin");
+      if (order.indexOf(origin) === -1) order.push(origin);
+    });
+    return order;
+  }
+  function originColour(origin, palette, order) {
+    var saved = originColoursMap()[origin];
+    if (saved) return saved;
+    var api = originApi();
+    if (api) return api.originColourFor(order.indexOf(origin), palette);
+    return (palette && palette.edge) || "#547c6d";
+  }
+  function originPatternFor(origin, order) {
+    var api = originApi();
+    return api ? api.originPattern(order.indexOf(origin)) : "solid";
+  }
+  function renderOriginLegend(palette, order) {
+    var ul = document.getElementById("origin-legend");
+    if (!ul) return;
+    var api = originApi();
+    var entries = api ? api.legendEntries(graphData.nodes) : order.map(function (o, i) {
+      return {origin: o, count: 0, pattern: "solid", patternIndex: i};
+    });
+    ul.innerHTML = "";
+    entries.forEach(function (entry) {
+      var li = document.createElement("li");
+      var swatch = document.createElement("span");
+      swatch.className = "origin-swatch origin-swatch-" + entry.pattern;
+      swatch.style.borderColor = originColour(entry.origin, palette, order);
+      if (entry.pattern === "double") swatch.style.outlineColor = originColour(entry.origin, palette, order);
+      swatch.setAttribute("aria-hidden", "true");
+      li.appendChild(swatch);
+      li.appendChild(document.createTextNode(
+        " " + entry.origin + " — " + entry.pattern + " ring — " + entry.count +
+        (entry.count === 1 ? " memory" : " memories")));
+      ul.appendChild(li);
+    });
+  }
+  /* One row per origin present in the loaded data: the label, a
+     colour picker, and a plain-words tooltip. Rows rebuild only
+     when the origin list itself changes, so dragging a picker
+     never rebuilds the control under the pointer. Changing a
+     colour saves it in the same settings key as everything else
+     and redraws the graph; the accessibility reset does not
+     touch origin_colours (it is not in ACCESSIBILITY_KEYS). */
+  var lastOriginRowKey = "";
+  function renderOriginColourRows(palette, order) {
+    var container = document.getElementById("origin-colours");
+    if (!container) return;
+    var key = JSON.stringify(order);
+    if (key === lastOriginRowKey && container.childNodes.length) return;
+    lastOriginRowKey = key;
+    container.innerHTML = "";
+    if (!order.length) {
+      var empty = document.createElement("p");
+      empty.textContent = "No memories yet — origin colours appear here once the first memory is stored.";
+      container.appendChild(empty);
+      return;
+    }
+    order.forEach(function (origin) {
+      var row = document.createElement("div");
+      row.className = "origin-colour-row";
+      var name = document.createElement("span");
+      name.className = "origin-colour-label";
+      name.textContent = origin;
+      var input = document.createElement("input");
+      input.type = "color";
+      input.value = originColour(origin, palette, order);
+      input.setAttribute("aria-label", "Ring colour for origin " + origin);
+      input.setAttribute("data-tooltip",
+        "Choose the ring colour for memories from " + origin +
+        ". The ring pattern and the Origins list still tell origins apart without colour.");
+      input.setAttribute("data-origin", origin);
+      input.addEventListener("input", function () { setOriginColour(origin, input.value); });
+      input.addEventListener("change", function () { setOriginColour(origin, input.value); });
+      bindTooltipElement(input);
+      row.appendChild(name);
+      row.appendChild(input);
+      container.appendChild(row);
+    });
+  }
+  function setOriginColour(origin, value) {
+    if (!/^#[0-9a-fA-F]{6}$/.test(String(value))) return;
+    var map = originColoursMap();
+    map[origin] = String(value);
+    state.origin_colours = map;
+    saveSettings();
+    renderGraph();
+  }
   function renderGraph() {
     var canvas = document.getElementById("graph-canvas");
     var svg = document.getElementById("graph-svg");
@@ -440,6 +584,22 @@
       stageEl.textContent = "Growth stage: " + stage.name + " — " + stage.description +
         " (" + stage.count + " memories, " + stage.verifiedCount + " checked.) " + nextText;
     }
+    /* Origins (Block 17): the palette the page is actually
+       rendering with, the first-seen origin order, the HTML
+       legend, and the Regular Settings colour rows. These render
+       for every metaphor view, not only the canvas one. */
+    var originStyles = getComputedStyle(document.body);
+    var originPalette = {
+      accent: originStyles.getPropertyValue("--accent").trim(),
+      edge: originStyles.getPropertyValue("--edge").trim(),
+      text: originStyles.getPropertyValue("--text").trim(),
+      bg: originStyles.getPropertyValue("--bg").trim(),
+      metal: originStyles.getPropertyValue("--metal").trim(),
+      border: originStyles.getPropertyValue("--border").trim()
+    };
+    var originOrder = originOrderOf(graphData.nodes);
+    renderOriginLegend(originPalette, originOrder);
+    renderOriginColourRows(originPalette, originOrder);
     if (state.metaphor === "nebula") {
       canvas.style.display = "block"; if (svg) svg.style.display = "none";
       var dims = fitCanvas(canvas);
@@ -506,9 +666,25 @@
           var group = nodes[i];
           var rep = group.representative || group;
           var pos = positions[group.id];
+          /* Origin ring (Block 17): the group's first member's
+             origin colour + pattern. Node fill stays the palette
+             node colour, so palette changes still work; the ring
+             carries the origin. The dash is set for the shape
+             stroke only and cleared right after, so edges and the
+             verified ring below are never dashed by accident. */
+          var api = originApi();
+          var groupOriginList = api ? api.groupOrigins(group) : [rep.origin || "unknown origin"];
+          var firstOrigin = groupOriginList[0];
+          var ringColour = originColour(firstOrigin, originPalette, originOrder);
+          var ringPattern = originPatternFor(firstOrigin, originOrder);
+          ctx.setLineDash(api ? api.patternDash(ringPattern) : []);
           drawShape(ctx, rep.shape || "circle", pos.x, pos.y, nodeSize,
             styles.getPropertyValue("--node").trim() || "#120d11",
-            styles.getPropertyValue("--border").trim() || "#241d23");
+            ringColour);
+          ctx.setLineDash([]);
+          if (ringPattern === "double") {
+            drawShapeOutline(ctx, rep.shape || "circle", pos.x, pos.y, nodeSize + 3, ringColour);
+          }
           /* Checked facts get an extra ring: verified-ness is carried
              by shape (ring vs. no ring) and by the text list, never
              by colour alone. A group is checked when ANY member
@@ -584,7 +760,7 @@
           var text = document.createElementNS(ns, "text");
           text.setAttribute("x", 20); text.setAttribute("y", 30 + idx * 24);
           text.setAttribute("fill", "currentColor");
-          text.textContent = node.shape + " — " + node.label;
+          text.textContent = node.shape + " — " + node.label + " — " + (originApi() ? originApi().originOf(node) : (node.origin || "unknown origin"));
           group.appendChild(text);
         });
         var title = document.createElementNS(ns, "title");
@@ -595,8 +771,9 @@
     list.innerHTML = "";
     graphData.nodes.forEach(function (node) {
       var li = document.createElement("li");
-      li.textContent = node.shape + ", " + node.domain + ", " + node.temporal_bucket + ": " + node.text;
-      li.setAttribute("aria-label", "Memory, shape " + node.shape + ", domain " + node.domain + ": " + node.text);
+      var nodeOrigin = originApi() ? originApi().originOf(node) : (node.origin || "unknown origin");
+      li.textContent = node.shape + ", " + node.domain + ", " + node.temporal_bucket + ", origin " + nodeOrigin + ": " + node.text;
+      li.setAttribute("aria-label", "Memory, shape " + node.shape + ", domain " + node.domain + ", origin " + nodeOrigin + ": " + node.text);
       list.appendChild(li);
     });
     var toast = document.getElementById("diff-toast");

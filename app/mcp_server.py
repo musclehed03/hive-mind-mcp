@@ -41,15 +41,55 @@ def _result(request_id, result):
     return {"jsonrpc": "2.0", "id": request_id, "result": result}
 
 
-def handle_request(request):
-    """Handle one parsed JSON-RPC request. Returns a response dict or None."""
+def _record_client_info(request, client_context):
+    """Best-effort recording of the client's `initialize` clientInfo.
+
+    ``client_context`` is a dict owned by the caller (one per
+    connection: the stdio loop owns one, each SSE session owns
+    one). A missing, malformed, or nameless clientInfo leaves the
+    name "unknown" — recording never fails a request. Only the
+    client's own name/version are kept, nothing else.
+    """
+    if client_context is None:
+        return
+    name = "unknown"
+    version = ""
+    try:
+        params = request.get("params")
+        info = params.get("clientInfo") if isinstance(params, dict) else None
+        if isinstance(info, dict):
+            raw_name = info.get("name")
+            if isinstance(raw_name, str) and raw_name.strip():
+                name = raw_name.strip()
+            raw_version = info.get("version")
+            if isinstance(raw_version, str):
+                version = raw_version.strip()
+    except Exception:
+        pass
+    client_context["client_name"] = name
+    client_context["client_version"] = version
+
+
+def handle_request(request, client_context=None):
+    """Handle one parsed JSON-RPC request. Returns a response dict or None.
+
+    ``client_context`` is a caller-owned dict (one per connection)
+    where the client's `initialize` clientInfo name is recorded
+    (Block 17); later tools/call requests on the same connection
+    pass that name into capture provenance. Callers that pass none
+    get a throwaway context, so direct calls behave exactly as
+    before.
+    """
     if not isinstance(request, dict):
         return _error(None, -32600, "Invalid Request: expected a JSON object")
     method = request.get("method")
     request_id = request.get("id")
     is_notification = request_id is None
+    if client_context is None:
+        client_context = {}
 
     if method == "initialize":
+        _record_client_info(request, client_context)
         if is_notification:
             return None
         return _result(request_id, {
@@ -94,7 +134,9 @@ def handle_request(request):
                 request_id, -32602,
                 f"missing required argument(s): {', '.join(missing)}",
             )
-        payload, is_error = dispatch_tool(name, arguments)
+        payload, is_error = dispatch_tool(
+            name, arguments,
+            client_name=client_context.get("client_name", "unknown"))
         return _result(request_id, {
             "content": [{"type": "text", "text": json.dumps(payload)}],
             "isError": is_error,
@@ -105,7 +147,13 @@ def handle_request(request):
 
 
 def serve_stdio():
-    """Read stdin lines until EOF, writing one response line each."""
+    """Read stdin lines until EOF, writing one response line each.
+
+    One client context for the process lifetime: stdio is a
+    single connection, so the `initialize` clientInfo recorded
+    here names every capture that follows on it.
+    """
+    client_context = {}
     for line in sys.stdin:
         line = line.strip()
         if not line:
@@ -115,7 +163,7 @@ def serve_stdio():
         except json.JSONDecodeError:
             response = _error(None, -32700, "Parse error: expected one JSON object per line")
         else:
-            response = handle_request(request)
+            response = handle_request(request, client_context)
         if response is not None:
             sys.stdout.write(json.dumps(response) + "\n")
             sys.stdout.flush()

@@ -35,6 +35,9 @@
     <p id="growth-stage" aria-live="polite" data-tooltip="How grown your memory sky is. More memories, and more checked facts, make it brighter.">Growth stage: Nebula — a young cloud, still gathering.</p>
     <div id="exp-meter" aria-live="polite" data-tooltip="Points you earn for keeping your memories healthy: checked facts, settled mix-ups, and backups. Points never cost money and never buy anything.">EXP: 0</div>
     <p id="graph-status" aria-live="polite">Loading graph data…</p>
+    <h3>Origins</h3>
+    <p>Who made each memory — a model, an app, or you. Every origin has its own ring colour and ring pattern, so origins stay apart even in grayscale.</p>
+    <ul id="origin-legend" class="origin-legend" aria-label="Memory origins, with counts"></ul>
     <h3>All memories, as text</h3>
     <ul id="node-list" class="node-list" aria-label="All memories in the graph"></ul>
     <div id="token-meter" aria-live="polite">Token Ekonomi Meter: no query yet.</div>
@@ -132,6 +135,10 @@
     <button type="button" id="toggle-sound" aria-pressed="false" aria-label="Sound effects on or off" data-tooltip="Turn sounds on or off.">Sound: off</button>
     <button type="button" id="toggle-notifications" aria-pressed="false" aria-label="Notifications on or off" data-tooltip="Turn pop-up messages on or off.">Notifications: off</button>
     <button type="button" id="toggle-tooltips" aria-pressed="true" aria-label="Tooltips on or off" data-tooltip="Turn the quick helper tips on or off. When they are off, no tips pop up.">Tooltips: on</button>
+    <h3>Origin colours</h3>
+    <p>Give each origin its own ring colour on the map. The ring pattern and the Origins list always say which origin is which, even in grayscale, so colour is never the only clue. Colours are saved on this device only, and the accessibility reset does not change them.</p>
+    <div id="origin-colours"></div>
+    <button type="button" id="reset-origin-colours" aria-label="Reset origin colours to defaults" data-tooltip="Put every origin ring colour back to its starting colour.">Reset origin colours</button>
   </section>
 
   <section class="regular integrations" id="integrations" aria-label="Integrations">
@@ -195,6 +202,7 @@ cwd = "ABSOLUTE_PATH_TO_HIVE_MIND_MCP"</code></pre>
       <li>The micro-bot is a small helper. Simple mode writes you a short morning summary. Pro mode watches for changes and only acts within the spending limit you set.</li>
       <li>The Accessibility Suite only changes how the page looks and reads: colours, text size, spacing, and movement. It never deletes or changes your memories.</li>
       <li>Growth stage is how grown your memory sky is. A Nebula becomes a Protostar, then a Star, then a Radiant Sun as you add memories and check facts. The stage is always written out in words next to the picture.</li>
+      <li>Origins say who made each memory — a model, an app, or you. Each origin has its own ring colour and its own ring pattern (solid, dashed, dotted, or double), listed in the Origins list under the picture with a count, so you can tell them apart even in grayscale. You can change the colours in Regular Settings.</li>
       <li>EXP is points for keeping memories healthy: checked facts, settled mix-ups, and backups. EXP never costs money and never buys anything.</li>
       <li>Integrations shows which apps and models are connected to Hive-Mind, and gives you the setup text to copy. Keys are never typed on this page: they live in the .env file, edited with nano in the terminal.</li>
       <li>If anything ever looks wrong, press Reset accessibility settings to go back to the starting look.</li>
