@@ -5,7 +5,7 @@
    palette is pure grayscale (every colour has R == G == B) by design.
    Objects are written as strict JSON so tests can parse them. */
 const HIVEMIND_PALETTES = {
-  "default": {"label": "Default (Deluxe Posh)", "background": "#14101c", "text": "#f5edf7", "accent": "#c86dd7", "border": "#3a2e4a", "node": "#2a2138", "edge": "#8e7aa8", "grayscale": false},
+  "default": {"label": "Default (Deluxe Posh)", "background": "#0d0a12", "text": "#f7f2f8", "accent": "#ff1e89", "border": "#4a2b42", "node": "#201327", "edge": "#a06a8c", "grayscale": false},
   "deuteranomaly": {"label": "Deuteranomaly", "background": "#101418", "text": "#f2f2f2", "accent": "#e69f00", "border": "#4a4a4a", "node": "#1c242c", "edge": "#56b4e9", "grayscale": false},
   "protanomaly": {"label": "Protanomaly", "background": "#101418", "text": "#f2f2f2", "accent": "#009e73", "border": "#4a4a4a", "node": "#1c242c", "edge": "#e69f00", "grayscale": false},
   "deuteranopia": {"label": "Deuteranopia", "background": "#0f1216", "text": "#ffffff", "accent": "#e69f00", "border": "#5a5a5a", "node": "#1a2028", "edge": "#56b4e9", "grayscale": false},

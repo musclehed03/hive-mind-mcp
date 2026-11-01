@@ -11,9 +11,11 @@
 <div id="hivemind-tooltip" role="tooltip" hidden></div>
 <header>
   <img src="logo.svg" alt="Hive-Mind logo: a house-shaped star" width="48" height="48">
-  <h1>Hive-Mind</h1>
-  <p>One memory layer every client shares. Nothing ever has to be restated.</p>
-  <p class="distraction">Demo build: local-first, fake Meta client only. Live gates are unverified until Sonja runs them.</p>
+  <div class="header-text">
+    <h1>Hive-Mind</h1>
+    <p class="tagline">One memory layer every client shares. Nothing ever has to be restated.</p>
+    <p class="status distraction"><strong>Live gates verified Nov 1, 2026:</strong> real Muse Spark cross-hatch checks and a real Supabase snapshot backup, both confirmed on Sonja's machine.</p>
+  </div>
 </header>
 
 <main>
@@ -35,9 +37,11 @@
     <ul id="node-list" class="node-list" aria-label="All memories in the graph"></ul>
     <div id="token-meter" aria-live="polite">Token Ekonomi Meter: no query yet.</div>
     <div id="diff-toast" aria-live="polite">No changes yet. A superseded fact will appear here as: - old fact / + new fact [Attested].</div>
-    <button id="refresh-button" type="button" aria-label="Refresh graph data" data-tooltip="Load your newest memories into the picture.">Refresh graph</button>
-    <button id="read-aloud-button" type="button" aria-label="Read the graph memories aloud" data-tooltip="Read all your memories out loud.">Read aloud</button>
-    <button id="microbot-slider-button" type="button" aria-label="Micro-bot mode slider: Simple Mode to Pro Mode" data-tooltip="Switch the little helper between a simple morning summary and the advanced watch mode.">Micro-bot: Simple Mode</button>
+    <div class="actions">
+      <button id="refresh-button" type="button" aria-label="Refresh graph data" data-tooltip="Load your newest memories into the picture.">Refresh graph</button>
+      <button id="read-aloud-button" type="button" aria-label="Read the graph memories aloud" data-tooltip="Read all your memories out loud.">Read aloud</button>
+      <button id="microbot-slider-button" type="button" aria-label="Micro-bot mode slider: Simple Mode to Pro Mode" data-tooltip="Switch the little helper between a simple morning summary and the advanced watch mode.">Micro-bot: Simple Mode</button>
+    </div>
   </section>
 
   <section class="accessibility" id="accessibility-suite" aria-label="Accessibility Suite">
