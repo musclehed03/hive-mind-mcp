@@ -31,22 +31,25 @@ assert.strictEqual(typeof G.fitLabel, "function");
 assert.strictEqual(G.KEYWORD_MAX_CHARS, 20);
 assert.strictEqual(G.LABEL_GAP_PX, 18);
 
-// Keywords: first three words only.
-assert.strictEqual(G.keywordLabel("Shop opens at 9am on Saturdays"), "Shop opens at");
-assert.strictEqual(G.keywordLabel("The library opens at 10am on weekdays"), "The library opens");
-assert.strictEqual(G.keywordLabel("The garden grows tomatoes in summer"), "The garden grows");
-assert.strictEqual(G.keywordLabel("one two three"), "one two three");
-assert.strictEqual(G.keywordLabel("single"), "single");
+// Keywords (Block 14): meaningful content words only — filler
+// words stripped, verbs kept, first two kept, first letter
+// title-cased. (Block 13 asserted first-three-words; Block 14
+// supersedes that rule — see test_block14_keywords.py.)
+assert.strictEqual(G.keywordLabel("Shop opens at 9am on Saturdays"), "Shop opens");
+assert.strictEqual(G.keywordLabel("The library opens at 10am on weekdays"), "Library opens");
+assert.strictEqual(G.keywordLabel("The garden grows tomatoes in summer"), "Garden grows");
+assert.strictEqual(G.keywordLabel("one two three"), "One two");
+assert.strictEqual(G.keywordLabel("single"), "Single");
 assert.strictEqual(G.keywordLabel(""), "");
 assert.strictEqual(G.keywordLabel("   "), "");
-assert.strictEqual(G.keywordLabel("  spaced   out   words  here "), "spaced out words");
+assert.strictEqual(G.keywordLabel("  spaced   out   words  here "), "Spaced out");
 // Long words: capped at 20 chars total, with an ellipsis.
 const long = G.keywordLabel("supercalifragilisticexpialidocious words here");
 assert.ok(long.length <= 20, long);
 assert.ok(long.endsWith("\\u2026"), long);
-assert.strictEqual(G.keywordLabel("abcdefghijklmnopqrstuv wxyz"), "abcdefghijklmnopqrs\\u2026");
-// Punctuation/numbers pass through untouched.
-assert.strictEqual(G.keywordLabel("Shop opens at 9am"), "Shop opens at");
+assert.strictEqual(G.keywordLabel("abcdefghijklmnopqrstuv wxyz"), "Abcdefghijklmnopqrs\\u2026");
+// Punctuation/numbers pass through untouched; filler words go.
+assert.strictEqual(G.keywordLabel("Shop opens at 9am"), "Shop opens");
 
 // Layout: centre and radius derive from the passed width/height.
 const pos = G.layoutNodes(

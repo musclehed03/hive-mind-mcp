@@ -56,9 +56,16 @@ body.achromatopsia #reading-guide { background: rgba(89, 89, 89, 0.25); }
    screens the two settings sections sit side by side; the graph
    and the guide always span the full width. */
 header, main, footer { max-width: 1080px; margin-left: auto; margin-right: auto; }
+/* Centring (Block 14): the margin shorthand below used to say
+   "20px 12px 4px", which overrode the shared auto side-margins
+   above with fixed 12px — on viewports wider than the 1080px
+   column the header/footer then stretched full-width while <main>
+   stayed centred, so the cards looked shifted against each
+   other. Auto margins + a 24px gutter width keep the outer edges
+   aligned with <main> at every width. */
 header {
   display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
-  margin: 20px 12px 4px; padding: 20px 24px;
+  margin: 20px auto 4px; width: calc(100% - 24px); padding: 20px 24px;
   border: 2px solid var(--border); border-bottom: 3px solid var(--accent);
   border-top: 1px solid var(--metal);
   border-radius: var(--radius);
@@ -88,7 +95,7 @@ section h3 { margin: 20px 0 8px; font-size: 1.05rem; letter-spacing: 0.04em; tex
 section p { margin: 8px 0; }
 footer {
   border: 2px solid var(--border); border-radius: var(--radius);
-  margin: 4px 12px 20px; padding: 14px 22px;
+  margin: 4px auto 20px; width: calc(100% - 24px); padding: 14px 22px;
   display: flex; gap: 12px; align-items: center;
   font-size: 0.95rem;
 }

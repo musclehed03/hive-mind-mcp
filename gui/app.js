@@ -439,7 +439,21 @@
       var dims = fitCanvas(canvas);
       var ctx = canvas.getContext("2d");
       ctx.setTransform(dims.dpr, 0, 0, dims.dpr, 0, 0);
-      layout(graphData.nodes, dims.width, dims.height);
+      /* Canvas-only duplicate grouping (Block 14): memories that
+         restate the same fact draw as ONE node labelled with the
+         meaningful keyword plus " ×N". Stage counts, EXP, the
+         status line, and the text list below still use every
+         memory individually — grouping changes only the picture,
+         so a fact stored twice never earns two dots. */
+      var graphApi = window.HIVEMIND_GRAPH || null;
+      var displayNodes = (graphApi && graphApi.groupGraphNodes)
+        ? graphApi.groupGraphNodes(graphData.nodes)
+        : graphData.nodes.map(function (n) {
+            return {id: n.id, representative: n, members: [n], count: 1,
+                    verified: stageApi ? stageApi.isVerified(n) : false,
+                    label: n.label || n.text || ""};
+          });
+      layout(displayNodes, dims.width, dims.height);
       /* Read colours from body, NOT from documentElement. Palette
          variables are set inline on :root, but body class rules
          (high-contrast, light theme) set the same variables on body
@@ -465,7 +479,6 @@
       ctx.save();
       ctx.globalAlpha = dustAlpha;
       ctx.fillStyle = styles.getPropertyValue("--text").trim() || "#ddd3d7";
-      var graphApi = window.HIVEMIND_GRAPH || null;
       for (var d = 0; d < dustCount; d++) {
         var dust = graphApi && graphApi.dustPoint
           ? graphApi.dustPoint(d, dims.width, dims.height)
@@ -476,48 +489,63 @@
       }
       ctx.restore();
       // Chunked rendering: 50 nodes per animation frame, never blocking.
-      var nodes = graphData.nodes.slice();
+      var nodes = displayNodes.slice();
       var nodeSize = 14 * (stage ? stage.scale : 1);
+      var placedLabels = [];
       var i = 0;
       (function drawChunk() {
         if (seq !== renderSeq) return; /* a newer render superseded this one */
         var end = Math.min(nodes.length, i + 50);
         for (; i < end; i++) {
-          var node = nodes[i];
-          var pos = positions[node.id];
-          drawShape(ctx, node.shape || "circle", pos.x, pos.y, nodeSize,
+          var group = nodes[i];
+          var rep = group.representative || group;
+          var pos = positions[group.id];
+          drawShape(ctx, rep.shape || "circle", pos.x, pos.y, nodeSize,
             styles.getPropertyValue("--node").trim() || "#120d11",
             styles.getPropertyValue("--border").trim() || "#241d23");
           /* Checked facts get an extra ring: verified-ness is carried
              by shape (ring vs. no ring) and by the text list, never
-             by colour alone. */
-          if (stageApi && stageApi.isVerified(node)) {
+             by colour alone. A group is checked when ANY member
+             passed Cross-Hatch Verify. */
+          if (group.verified) {
             ctx.beginPath();
             ctx.arc(pos.x, pos.y, nodeSize + 5, 0, 2 * Math.PI);
             ctx.lineWidth = 2;
             ctx.strokeStyle = styles.getPropertyValue("--edge").trim() || "#547c6d";
             ctx.stroke();
           }
-          /* Keyword labels (Block 13): the first three words of the
-             memory, side-aware and truncated to the space between
-             the node and the canvas edge, so labels never overlap
-             each other, the node, or the edge. The full sentence
-             stays in the text list below the graph. */
+          /* Keyword labels (Blocks 13-14): the meaningful keyword
+             from the group label (with " ×N" for duplicates),
+             side-aware, fitted to the canvas edge, and staggered
+             vertically while it would overlap an earlier label.
+             The full sentence stays in the text list below the
+             graph. */
           ctx.fillStyle = styles.getPropertyValue("--text").trim() || "#ddd3d7";
           ctx.font = "12px sans-serif";
           ctx.textBaseline = "middle";
-          if (graphApi && graphApi.keywordLabel) {
-            var keyword = graphApi.keywordLabel(node.label || node.text || "");
+          if (graphApi && graphApi.placeLabel && group.label) {
+            var geo = graphApi.labelGeometry(pos, dims.width, nodeSize);
+            var placed = graphApi.placeLabel(geo, group.label, pos.y,
+              function (t) { return ctx.measureText(t).width; },
+              placedLabels, dims.width, dims.height);
+            if (placed) {
+              placedLabels.push(placed.box);
+              ctx.textAlign = geo.textAlign;
+              ctx.fillText(placed.text, placed.x, placed.y);
+              ctx.textAlign = "left";
+            }
+          } else if (graphApi && graphApi.keywordLabel) {
+            var keyword = graphApi.keywordLabel(rep.label || rep.text || "");
             if (keyword) {
-              var geo = graphApi.labelGeometry(pos, dims.width, nodeSize);
-              var room = geo.textAlign === "right"
-                ? geo.x - 8
-                : dims.width - 8 - geo.x;
+              var geo2 = graphApi.labelGeometry(pos, dims.width, nodeSize);
+              var room = geo2.textAlign === "right"
+                ? geo2.x - 8
+                : dims.width - 8 - geo2.x;
               if (room >= 24) {
                 var fitted = graphApi.fitLabel(keyword, room, function (t) { return ctx.measureText(t).width; });
                 if (fitted) {
-                  ctx.textAlign = geo.textAlign;
-                  ctx.fillText(fitted, geo.x, pos.y);
+                  ctx.textAlign = geo2.textAlign;
+                  ctx.fillText(fitted, geo2.x, pos.y);
                   ctx.textAlign = "left";
                 }
               }
@@ -526,7 +554,13 @@
         }
         if (i < nodes.length) requestAnimationFrame(drawChunk);
       })();
-      graphData.edges.forEach(function (edge) {
+      /* Edges are drawn between groups, not individual duplicate
+         memories: an edge inside one group vanishes, and identical
+         group pairs draw once. */
+      var displayEdges = (graphApi && graphApi.mapGroupEdges)
+        ? graphApi.mapGroupEdges(graphData.edges, displayNodes)
+        : graphData.edges;
+      displayEdges.forEach(function (edge) {
         var a = positions[edge.from], b = positions[edge.to];
         if (!a || !b) return;
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
