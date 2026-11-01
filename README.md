@@ -188,6 +188,23 @@ Honesty is part of the build. In this repo, as submitted:
   dotted / double) and a written Origins legend with counts, so
   origins stay distinguishable in pure grayscale. The
   accessibility reset never wipes origin colours.
+- **Block 18 — Demo autopilot** (`gui/demo.js`, `gui/app.js`,
+  `scripts/demo_terminal.py`): the demo drives itself so no step
+  has to be remembered mid-take. In the GUI, **Play demo** (above
+  the graph, outside the Accessibility Suite) walks Beats 3–4 —
+  growth stage, EXP, an origin ring-colour change, the metaphor
+  switch, the achromatopsia profile on and off, the Integrations
+  copy button, and the read-aloud button shown but never pressed
+  — with a plain-words caption, a step counter, and a progress
+  bar, 6 seconds a step; Space pauses, Escape stops, and every
+  setting the demo changed is restored exactly at the end. In
+  the terminal, `.venv/bin/python scripts/demo_terminal.py`
+  (`--fast` for 1s pauses, `--step` to wait for Enter) runs Beats
+  1–2 plus the Beat 4 micro-bot/snapshot calls against the stdio
+  server in a throwaway temp store. Both halves are fake-mode
+  only: the runner refuses to start with `HIVE_MIND_LIVE` set or
+  `META_API_KEY` present, and the GUI demo never writes, never
+  calls the network, and never starts on its own.
 
 ## Design system
 
@@ -205,6 +222,7 @@ shapes carry all hierarchy in pure grayscale for achromatopsia.
 - `app/` — MCP core (stdlib only, plus `sqlite-vec`)
 - `gui/` — plain HTML/JS/CSS graph + Accessibility Suite + clipper
 - `tests/` — pytest gates, one file per block
+- `scripts/demo_terminal.py` — demo autopilot terminal runner
 - `docs/DEMO_SCRIPT.md`, `docs/SUBMISSION_CHECKLIST.md` — demo + submission
 - `docs/INTEGRATIONS.md` — MCP client configs, model endpoints, hotkeys
 

@@ -119,6 +119,16 @@ select { max-width: 100%; }
 .actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 .actions button { margin: 0; }
 
+/* Demo playback (Block 18): controls sit above the picture, in
+   the graph section — not in the Accessibility Suite, which
+   holds access needs only. The spotlight is a dashed outline,
+   a shape cue that survives grayscale, and it always travels
+   with the spoken caption text below the buttons. */
+.demo-controls { border: 2px dashed var(--border); border-radius: var(--radius); padding: 10px 12px; margin: 12px 0 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.demo-controls button { margin: 0; }
+.demo-controls progress { accent-color: var(--accent); }
+#demo-caption { flex-basis: 100%; margin: 4px 0 0; }
+.demo-highlight { outline: 3px dashed var(--accent) !important; outline-offset: 4px; }
 .graph-wrap { border: 2px solid var(--border); border-radius: var(--radius); position: relative; min-height: 340px; overflow: hidden; background: var(--bg); }
 canvas, svg.graph { width: 100%; height: 340px; display: block; }
 @media (min-width: 900px) {

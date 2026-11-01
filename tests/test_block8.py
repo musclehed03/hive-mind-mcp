@@ -32,20 +32,23 @@ def test_no_todo_or_fixme_in_shipped_code():
 
 
 def test_no_polling_or_timers_in_gui():
-    # Revised for fast custom tooltips (standing SOP, ~500ms) and
-    # for the Block 16 copy buttons: the ONLY timers allowed in the
-    # GUI are two one-shot setTimeout calls in app.js — the tooltip
-    # delay (always paired with clearTimeout) and the "Copied"
-    # button-text revert. Neither is polling. setInterval stays
-    # banned everywhere, and no other setTimeout may appear.
-    # Widening this beyond those two one-shot delays would weaken
-    # the guard.
+    # Revised for fast custom tooltips (standing SOP, ~500ms),
+    # for the Block 16 copy buttons, and for the Block 18 demo
+    # autopilot: the ONLY timers allowed in the GUI are three
+    # one-shot setTimeout call sites in app.js — the tooltip
+    # delay (always paired with clearTimeout), the "Copied"
+    # button-text revert, and the single demo scheduler through
+    # which step advances and the countdown chain (one-shot,
+    # always cleared on pause/stop). None is polling. setInterval
+    # stays banned everywhere, and no other setTimeout may appear.
+    # Widening this beyond those three one-shot delays would
+    # weaken the guard.
     for name in ("app.js", "clipper.html"):
         with open(os.path.join(REPO, "gui", name), encoding="utf-8") as f:
             js = f.read()
         assert "setInterval" not in js, name
         if name == "app.js":
-            assert js.count("setTimeout") == 2, "tooltip delay + copy revert only"
+            assert js.count("setTimeout") == 3, "tooltip delay + copy revert + demo scheduler only"
             assert "TOOLTIP_DELAY_MS = 500" in js
             assert "clearTimeout" in js
             assert "Copied" in js

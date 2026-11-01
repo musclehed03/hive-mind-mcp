@@ -24,6 +24,19 @@ Screen capture: GUI browser window + terminal side by side, captions
 on. Record at the machine's native resolution; keep the terminal
 font large enough to read at video size.
 
+Autopilot (Block 18): the demo drives itself, so no step has to be
+remembered mid-take. The terminal half is
+`.venv/bin/python scripts/demo_terminal.py` (6-second pauses;
+`--fast` for 1-second pauses, `--step` to wait for Enter) — it
+seeds the throwaway store, runs Beats 1–2 plus the Beat 4
+micro-bot/snapshot calls, and refuses to start with
+`HIVE_MIND_LIVE` set or `META_API_KEY` present. The GUI half is
+the **Play demo** button above the graph: it walks Beats 3–4
+with a caption per step, 6 seconds a step; Space pauses, Escape
+stops, and your colours, profile, and graph view come back
+exactly as they were at the end. Either half may be used on its
+own; the manual steps below are what the autopilot performs.
+
 ```bash
 cd hive-mind-mcp && git pull
 python3 -m venv .venv

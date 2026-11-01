@@ -21,6 +21,14 @@
 <main>
   <section aria-label="Knowledge graph">
     <h2>Knowledge graph</h2>
+    <div class="demo-controls" aria-label="Demo playback">
+      <button id="demo-play" type="button" aria-label="Play the guided demo" data-tooltip="Play a guided tour: the page walks through the demo steps by itself. Press again to pause. Space pauses too, Escape stops.">Play demo</button>
+      <button id="demo-stop" type="button" aria-label="Stop the guided demo" data-tooltip="Stop the guided tour and put all your settings back as they were.">Stop demo</button>
+      <span id="demo-step-indicator" aria-live="polite">Demo off</span>
+      <progress id="demo-progress" max="6" value="0" aria-label="Time left in this demo step"></progress>
+      <span id="demo-countdown" aria-live="off"></span>
+      <p id="demo-caption" aria-live="polite">Press Play demo to watch the page walk through the demo by itself. Nothing is saved or sent; your settings come back exactly as they were when it stops.</p>
+    </div>
     <label for="metaphor-select">Graph view (Regular Setting):</label>
     <select id="metaphor-select" aria-label="Graph view: nebula, tree of life, spherical mandala, or mythical road map" data-tooltip="Choose how your memories are drawn: a star map, a tree, a round pattern, or a road map.">
       <option value="nebula">Cosmic Nebula (Birth of a Star)</option>
@@ -57,7 +65,7 @@
       <button type="button" class="profile-button" data-profile="adhd_focus" aria-pressed="false" aria-label="ADHD and focus profile" data-tooltip="One tap: hide distractions and show a reading guide to help you focus.">ADHD / Focus</button>
       <button type="button" class="profile-button" data-profile="vision_impaired" aria-pressed="false" aria-label="Vision impaired profile" data-tooltip="One tap: bigger text, bold words, and stronger contrast.">Vision Impaired</button>
       <button type="button" class="profile-button" data-profile="seizure_safe" aria-pressed="false" aria-label="Seizure safe profile" data-tooltip="One tap: stop movement, soften colours, and hide distractions.">Seizure Safe</button>
-      <button type="button" class="profile-button" data-profile="achromatopsia" aria-pressed="false" aria-label="Achromatopsia profile, pure grayscale" data-tooltip="One tap: shades of grey only, with black text on a white background.">Achromatopsia</button>
+      <button type="button" class="profile-button" id="profile-achromatopsia" data-profile="achromatopsia" aria-pressed="false" aria-label="Achromatopsia profile, pure grayscale" data-tooltip="One tap: shades of grey only, with black text on a white background.">Achromatopsia</button>
     </div>
     <h3>Sensory Suite toggles</h3>
     <button type="button" id="toggle-focus" aria-pressed="false" aria-label="Focus Mode: hide distractions" data-tooltip="Hide extra notes so you can focus on your memories.">Focus Mode</button>
@@ -205,6 +213,7 @@ cwd = "ABSOLUTE_PATH_TO_HIVE_MIND_MCP"</code></pre>
       <li>Origins say who made each memory — a model, an app, or you. Each origin has its own ring colour and its own ring pattern (solid, dashed, dotted, or double), listed in the Origins list under the picture with a count, so you can tell them apart even in grayscale. You can change the colours in Regular Settings.</li>
       <li>EXP is points for keeping memories healthy: checked facts, settled mix-ups, and backups. EXP never costs money and never buys anything.</li>
       <li>Integrations shows which apps and models are connected to Hive-Mind, and gives you the setup text to copy. Keys are never typed on this page: they live in the .env file, edited with nano in the terminal.</li>
+      <li>Demo play: press Play demo above the picture to watch the page walk through the demo steps by itself — the growth stage, EXP, origins, the graph view, grayscale, and Integrations. Press Play again to pause, Escape to stop. Your colours, profile, and graph view come back exactly as they were when it stops or finishes.</li>
       <li>If anything ever looks wrong, press Reset accessibility settings to go back to the starting look.</li>
     </ul>
   </section>
@@ -215,6 +224,7 @@ cwd = "ABSOLUTE_PATH_TO_HIVE_MIND_MCP"</code></pre>
 </footer>
 <script src="settings-data.js"></script>
 <script src="stage.js"></script>
+<script src="demo.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

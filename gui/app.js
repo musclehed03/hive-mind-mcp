@@ -364,6 +364,25 @@
     });
     var refresh = document.getElementById("refresh-button");
     if (refresh) refresh.addEventListener("click", loadData);
+    /* Demo autopilot controls (Block 18): Play toggles
+       play/pause, Stop restores settings and ends the run.
+       Keyboard: Space pauses/resumes (except when focus is on
+       a button, slider, or text field, where the control's own
+       behaviour wins), Escape stops. */
+    var demoPlay = document.getElementById("demo-play");
+    if (demoPlay) demoPlay.addEventListener("click", demoToggle);
+    var demoStopBtn = document.getElementById("demo-stop");
+    if (demoStopBtn) demoStopBtn.addEventListener("click", demoStop);
+    document.addEventListener("keydown", function (ev) {
+      if (!demoRun) return;
+      var tag = (ev.target && ev.target.tagName) || "";
+      if (ev.key === "Escape") { demoStop(); return; }
+      if (ev.key === " " && tag !== "INPUT" && tag !== "SELECT" &&
+          tag !== "TEXTAREA" && tag !== "BUTTON") {
+        ev.preventDefault();
+        demoToggle();
+      }
+    });
     /* Integrations copy buttons (Block 16): each copies plain
        text only — a command, an address, or the Codex setup
        snippet. Never a key: no key is ever on this page. */
@@ -460,6 +479,21 @@
      so the achromatopsia greyscale filter cannot take the
      meaning away. */
   function originApi() { return window.HIVEMIND_ORIGINS || null; }
+  /* The palette the page is actually rendering with, read from
+     body (body class rules win over :root for these variables —
+     see the canvas colour comment in renderGraph). Shared by the
+     graph render and the demo autopilot. */
+  function bodyPalette() {
+    var styles = getComputedStyle(document.body);
+    return {
+      accent: styles.getPropertyValue("--accent").trim(),
+      edge: styles.getPropertyValue("--edge").trim(),
+      text: styles.getPropertyValue("--text").trim(),
+      bg: styles.getPropertyValue("--bg").trim(),
+      metal: styles.getPropertyValue("--metal").trim(),
+      border: styles.getPropertyValue("--border").trim()
+    };
+  }
   function originColoursMap() {
     var saved = state.origin_colours;
     if (!saved || typeof saved !== "object" || Array.isArray(saved)) return {};
@@ -588,15 +622,7 @@
        rendering with, the first-seen origin order, the HTML
        legend, and the Regular Settings colour rows. These render
        for every metaphor view, not only the canvas one. */
-    var originStyles = getComputedStyle(document.body);
-    var originPalette = {
-      accent: originStyles.getPropertyValue("--accent").trim(),
-      edge: originStyles.getPropertyValue("--edge").trim(),
-      text: originStyles.getPropertyValue("--text").trim(),
-      bg: originStyles.getPropertyValue("--bg").trim(),
-      metal: originStyles.getPropertyValue("--metal").trim(),
-      border: originStyles.getPropertyValue("--border").trim()
-    };
+    var originPalette = bodyPalette();
     var originOrder = originOrderOf(graphData.nodes);
     renderOriginLegend(originPalette, originOrder);
     renderOriginColourRows(originPalette, originOrder);
@@ -881,6 +907,212 @@
       })
       .catch(function () { /* no server: keep the static defaults */ });
   }
+
+  /* Demo autopilot (Block 18). The page walks itself through
+     DEMO_SCRIPT.md Beats 3-4: one Play press, no remembered
+     steps, nothing to forget mid-take. The step list, captions,
+     and dwell arithmetic are pure helpers in demo.js; this
+     driver only maps action keys onto the same functions a
+     click would run, spotlights the target, and restores the
+     user's exact settings when the demo stops or finishes.
+     Playback never starts on its own, never writes a memory,
+     never calls the network, and never touches the vault. The
+     single delay below is the only one the demo may schedule:
+     step advances and the countdown share it, one-shot only,
+     always cleared on pause/stop — never polling. When Safe
+     Motion is on, the spotlight jumps instantly instead of
+     smooth-scrolling. */
+  function demoApi() { return window.HIVEMIND_DEMO || null; }
+  function scheduleDemo(fn, ms) { return setTimeout(fn, ms); }
+  var demoRun = null;
+  var demoHighlightEl = null;
+  function demoSetCaption(text) {
+    var el = document.getElementById("demo-caption");
+    if (el) el.textContent = text;
+  }
+  function demoSetIndicator(text) {
+    var el = document.getElementById("demo-step-indicator");
+    if (el) el.textContent = text;
+  }
+  function demoSetProgress(frac, secondsLeft) {
+    var bar = document.getElementById("demo-progress");
+    if (bar) bar.value = Math.round(frac * Number(bar.max || 6));
+    var cd = document.getElementById("demo-countdown");
+    if (cd) cd.textContent = secondsLeft > 0 ? secondsLeft + "s left" : "";
+  }
+  function demoClearTimers() {
+    if (!demoRun) return;
+    if (demoRun.stepTimer) { clearTimeout(demoRun.stepTimer); demoRun.stepTimer = null; }
+    if (demoRun.tickTimer) { clearTimeout(demoRun.tickTimer); demoRun.tickTimer = null; }
+  }
+  function demoHighlight(targetId) {
+    if (demoHighlightEl) demoHighlightEl.classList.remove("demo-highlight");
+    demoHighlightEl = null;
+    if (!targetId) return;
+    var el = document.getElementById(targetId);
+    if (!el) return;
+    el.classList.add("demo-highlight");
+    demoHighlightEl = el;
+    if (state.safe_motion) el.scrollIntoView({block: "center"});
+    else el.scrollIntoView({behavior: "smooth", block: "center"});
+  }
+  function demoClearHighlight() {
+    if (demoHighlightEl) demoHighlightEl.classList.remove("demo-highlight");
+    demoHighlightEl = null;
+  }
+  /* Run one demo action key, using the real control paths. The
+     read-aloud action does not exist on purpose: that step is
+     spotlighted, never pressed, so a recording never gets
+     surprise audio. */
+  function demoRunAction(action) {
+    var api = demoApi();
+    if (!api) return;
+    if (action === "origin-colour") {
+      var order = originOrderOf(graphData.nodes);
+      if (!order.length) return;
+      var origin = order[0];
+      var palette = bodyPalette();
+      var current = originColour(origin, palette, order);
+      var origins = originApi();
+      var idx = order.indexOf(origin);
+      var candidates = [];
+      if (origins && origins.originColourFor) {
+        for (var k = 1; k <= 6; k++) {
+          candidates.push(origins.originColourFor(idx + k, palette));
+        }
+      }
+      var picked = api.pickDemoColour(current, candidates);
+      if (picked) setOriginColour(origin, picked);
+    } else if (action === "metaphor-tree") {
+      state.metaphor = "tree"; applySettings(); renderGraph();
+    } else if (action === "metaphor-nebula") {
+      state.metaphor = "nebula"; applySettings(); renderGraph();
+    } else if (action === "achromatopsia-on") {
+      if (state.active_profile !== "achromatopsia") {
+        applyProfile("achromatopsia");
+        if (demoRun) demoRun.turnedProfileOn = true;
+      }
+    } else if (action === "achromatopsia-off") {
+      if (demoRun && demoRun.turnedProfileOn) {
+        applyProfile("achromatopsia");
+        demoRun.turnedProfileOn = false;
+      }
+    } else if (action === "integrations-copy") {
+      var btn = document.getElementById("copy-stdio");
+      if (btn) copyIntegration(btn);
+    }
+  }
+  function demoTick() {
+    if (!demoRun || demoRun.paused) return;
+    var api = demoApi();
+    var dwell = (api && api.DWELL_MS) || 6000;
+    var elapsed = dwell - Math.max(0, demoRun.stepEndsAt - Date.now());
+    demoSetProgress(api.progressFraction(elapsed, dwell), api.remainingSeconds(dwell, elapsed));
+    demoRun.tickTimer = scheduleDemo(demoTick, 1000);
+  }
+  function demoShowStep(index) {
+    var api = demoApi();
+    if (!api || !demoRun) return;
+    var step = api.stepAt(index);
+    if (!step) { demoFinish(); return; }
+    demoRun.index = index;
+    demoRun.leavePending = !!step.onLeave;
+    demoSetCaption(step.caption);
+    demoSetIndicator("Step " + (index + 1) + " of " + api.stepCount());
+    demoHighlight(step.targetId);
+    demoRunAction(step.onEnter);
+    demoRun.stepEndsAt = Date.now() + demoRun.remainingMs;
+    demoRun.stepTimer = scheduleDemo(demoAdvance, demoRun.remainingMs);
+    demoRun.remainingMs = api.DWELL_MS || 6000;
+    demoTick();
+  }
+  function demoAdvance() {
+    if (!demoRun) return;
+    var api = demoApi();
+    var step = api ? api.stepAt(demoRun.index) : null;
+    demoClearTimers();
+    if (step && step.onLeave && demoRun.leavePending) {
+      demoRun.leavePending = false;
+      demoRunAction(step.onLeave);
+    }
+    var next = api ? api.nextStepIndex(demoRun.index) : -1;
+    if (next === -1) { demoFinish(); return; }
+    demoRun.remainingMs = (api && api.DWELL_MS) || 6000;
+    demoShowStep(next);
+  }
+  function demoSyncPlayButton() {
+    var btn = document.getElementById("demo-play");
+    if (!btn) return;
+    if (demoRun && !demoRun.paused) {
+      btn.textContent = "Pause demo";
+      btn.setAttribute("aria-pressed", "true");
+    } else {
+      btn.textContent = "Play demo";
+      btn.setAttribute("aria-pressed", "false");
+    }
+  }
+  function demoStart() {
+    var api = demoApi();
+    if (!api || demoRun) return;
+    demoRun = {
+      index: 0, snapshot: api.captureSnapshot(state),
+      turnedProfileOn: false, paused: false,
+      remainingMs: api.DWELL_MS || 6000, stepEndsAt: 0,
+      stepTimer: null, tickTimer: null, leavePending: false
+    };
+    demoSyncPlayButton();
+    demoShowStep(0);
+  }
+  function demoPause() {
+    if (!demoRun || demoRun.paused) return;
+    demoRun.paused = true;
+    demoRun.remainingMs = Math.max(0, demoRun.stepEndsAt - Date.now());
+    demoClearTimers();
+    demoSetIndicator("Paused — step " + (demoRun.index + 1) + " of " + (demoApi() ? demoApi().stepCount() : "?"));
+    demoSyncPlayButton();
+  }
+  function demoResume() {
+    if (!demoRun || !demoRun.paused) return;
+    demoRun.paused = false;
+    demoRun.stepEndsAt = Date.now() + demoRun.remainingMs;
+    demoRun.stepTimer = scheduleDemo(demoAdvance, demoRun.remainingMs);
+    demoTick();
+    demoSyncPlayButton();
+  }
+  function demoToggle() {
+    if (!demoRun) demoStart();
+    else if (demoRun.paused) demoResume();
+    else demoPause();
+  }
+  function demoRestore() {
+    var api = demoApi();
+    if (demoRun && api) {
+      state = api.applySnapshot(demoRun.snapshot);
+      applySettings();
+      renderGraph();
+    }
+  }
+  function demoEnd(finished) {
+    if (!demoRun) return;
+    var api = demoApi();
+    var step = api ? api.stepAt(demoRun.index) : null;
+    demoClearTimers();
+    if (step && step.onLeave && demoRun.leavePending) {
+      demoRun.leavePending = false;
+      demoRunAction(step.onLeave);
+    }
+    demoClearHighlight();
+    demoRestore();
+    demoRun = null;
+    demoSetCaption(finished
+      ? "Demo finished. Your colours, profile, and graph view are back exactly as they were."
+      : "Demo stopped. Your colours, profile, and graph view are back exactly as they were.");
+    demoSetIndicator("Demo off");
+    demoSetProgress(0, 0);
+    demoSyncPlayButton();
+  }
+  function demoFinish() { demoEnd(true); }
+  function demoStop() { demoEnd(false); }
 
   function loadData() {
     loadExp();

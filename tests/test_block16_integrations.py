@@ -246,9 +246,10 @@ def test_js_copy_handler_and_fetch():
     assert "codex-config-snippet" in js
     assert "data-copy" in js
     assert "setInterval" not in js
-    # Exactly two one-shot delays: tooltip + copy revert (guard
-    # revision disclosed in test_block8.py).
-    assert js.count("setTimeout") == 2
+    # Exactly three one-shot delays: tooltip + copy revert + the
+    # single Block 18 demo scheduler (guard revision disclosed in
+    # test_block8.py).
+    assert js.count("setTimeout") == 3
     css = _read_gui("styles.css")
     assert ".integration-status.status-connected" in css
     assert ".integration-status.status-off" in css
