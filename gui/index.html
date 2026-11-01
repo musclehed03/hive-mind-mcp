@@ -19,7 +19,7 @@
   <section aria-label="Knowledge graph">
     <h2>Knowledge graph</h2>
     <label for="metaphor-select">Graph view (Regular Setting):</label>
-    <select id="metaphor-select" aria-label="Graph view: nebula, tree of life, spherical mandala, or mythical road map">
+    <select id="metaphor-select" aria-label="Graph view: nebula, tree of life, spherical mandala, or mythical road map" title="Choose how your memories are drawn: a star map, a tree, a round pattern, or a road map.">
       <option value="nebula">Cosmic Nebula (Birth of a Star)</option>
       <option value="tree">Tree of Life</option>
       <option value="mandala">Spherical Mandala</option>
@@ -34,35 +34,35 @@
     <ul id="node-list" class="node-list" aria-label="All memories in the graph"></ul>
     <div id="token-meter" aria-live="polite">Token Ekonomi Meter: no query yet.</div>
     <div id="diff-toast" aria-live="polite">No changes yet. A superseded fact will appear here as: - old fact / + new fact [Attested].</div>
-    <button id="refresh-button" type="button" aria-label="Refresh graph data">Refresh graph</button>
-    <button id="read-aloud-button" type="button" aria-label="Read the graph memories aloud">Read aloud</button>
-    <button id="microbot-slider-button" type="button" aria-label="Micro-bot mode slider: Simple Mode to Pro Mode">Micro-bot: Simple Mode</button>
+    <button id="refresh-button" type="button" aria-label="Refresh graph data" title="Load your newest memories into the picture.">Refresh graph</button>
+    <button id="read-aloud-button" type="button" aria-label="Read the graph memories aloud" title="Read all your memories out loud.">Read aloud</button>
+    <button id="microbot-slider-button" type="button" aria-label="Micro-bot mode slider: Simple Mode to Pro Mode" title="Switch the little helper between a simple morning summary and the advanced watch mode.">Micro-bot: Simple Mode</button>
   </section>
 
   <section class="accessibility" id="accessibility-suite" aria-label="Accessibility Suite">
     <h2>Accessibility Suite</h2>
     <p>One-tap profiles first; finer controls underneath. Profiles never lock you out of the individual controls.</p>
     <div role="group" aria-label="One-tap accessibility profiles">
-      <button type="button" class="profile-button" data-profile="dyslexia" aria-pressed="false" aria-label="Dyslexia profile">Dyslexia</button>
-      <button type="button" class="profile-button" data-profile="adhd_focus" aria-pressed="false" aria-label="ADHD and focus profile">ADHD / Focus</button>
-      <button type="button" class="profile-button" data-profile="vision_impaired" aria-pressed="false" aria-label="Vision impaired profile">Vision Impaired</button>
-      <button type="button" class="profile-button" data-profile="seizure_safe" aria-pressed="false" aria-label="Seizure safe profile">Seizure Safe</button>
-      <button type="button" class="profile-button" data-profile="achromatopsia" aria-pressed="false" aria-label="Achromatopsia profile, pure grayscale">Achromatopsia</button>
+      <button type="button" class="profile-button" data-profile="dyslexia" aria-pressed="false" aria-label="Dyslexia profile" title="One tap: easier reading font, more space, and fewer distractions.">Dyslexia</button>
+      <button type="button" class="profile-button" data-profile="adhd_focus" aria-pressed="false" aria-label="ADHD and focus profile" title="One tap: hide distractions and show a reading guide to help you focus.">ADHD / Focus</button>
+      <button type="button" class="profile-button" data-profile="vision_impaired" aria-pressed="false" aria-label="Vision impaired profile" title="One tap: bigger text, bold words, and stronger contrast.">Vision Impaired</button>
+      <button type="button" class="profile-button" data-profile="seizure_safe" aria-pressed="false" aria-label="Seizure safe profile" title="One tap: stop movement, soften colours, and hide distractions.">Seizure Safe</button>
+      <button type="button" class="profile-button" data-profile="achromatopsia" aria-pressed="false" aria-label="Achromatopsia profile, pure grayscale" title="One tap: shades of grey only, with black text on a white background.">Achromatopsia</button>
     </div>
     <h3>Sensory Suite toggles</h3>
-    <button type="button" id="toggle-focus" aria-pressed="false" aria-label="Focus Mode: hide distractions">Focus Mode</button>
-    <button type="button" id="toggle-motion" aria-pressed="false" aria-label="Safe Motion: stop animations">Safe Motion</button>
-    <button type="button" id="toggle-font" aria-pressed="false" aria-label="Readable Font">Readable Font</button>
-    <button type="button" id="toggle-contrast" aria-pressed="false" aria-label="High Contrast">High Contrast</button>
-    <button type="button" id="toggle-light" aria-pressed="false" aria-label="Light Theme">Light Theme</button>
-    <button type="button" id="toggle-simplified" aria-pressed="false" aria-label="Simplified View: hide images">Simplified View</button>
-    <button type="button" id="toggle-bold" aria-pressed="false" aria-label="Bold text">Bold Text</button>
-    <button type="button" id="toggle-underline" aria-pressed="false" aria-label="Underline all links">Underline Links</button>
-    <button type="button" id="toggle-focus-outline" aria-pressed="false" aria-label="Strong keyboard focus outline">Strong Focus Outline</button>
-    <button type="button" id="toggle-guide" aria-pressed="false" aria-label="Reading guide ruler">Reading Guide</button>
-    <button type="button" id="toggle-cursor" aria-pressed="false" aria-label="Larger cursor">Larger Cursor</button>
+    <button type="button" id="toggle-focus" aria-pressed="false" aria-label="Focus Mode: hide distractions" title="Hide extra notes so you can focus on your memories.">Focus Mode</button>
+    <button type="button" id="toggle-motion" aria-pressed="false" aria-label="Safe Motion: stop animations" title="Stop movement and animation on this page.">Safe Motion</button>
+    <button type="button" id="toggle-font" aria-pressed="false" aria-label="Readable Font" title="Use a font that is easier to read.">Readable Font</button>
+    <button type="button" id="toggle-contrast" aria-pressed="false" aria-label="High Contrast" title="Make text and borders stand out more strongly.">High Contrast</button>
+    <button type="button" id="toggle-light" aria-pressed="false" aria-label="Light Theme" title="Use a light background instead of a dark one.">Light Theme</button>
+    <button type="button" id="toggle-simplified" aria-pressed="false" aria-label="Simplified View: hide images" title="Hide pictures and logos for a plainer page.">Simplified View</button>
+    <button type="button" id="toggle-bold" aria-pressed="false" aria-label="Bold text" title="Make all words bold.">Bold Text</button>
+    <button type="button" id="toggle-underline" aria-pressed="false" aria-label="Underline all links" title="Put a line under every link so links are easy to spot.">Underline Links</button>
+    <button type="button" id="toggle-focus-outline" aria-pressed="false" aria-label="Strong keyboard focus outline" title="Show a thick outline around whatever you have selected with the keyboard.">Strong Focus Outline</button>
+    <button type="button" id="toggle-guide" aria-pressed="false" aria-label="Reading guide ruler" title="Show a band that follows your mouse to help you keep your place while reading.">Reading Guide</button>
+    <button type="button" id="toggle-cursor" aria-pressed="false" aria-label="Larger cursor" title="Make the mouse pointer bigger and easier to find.">Larger Cursor</button>
     <label for="palette-select">Colour-blind palette:</label>
-    <select id="palette-select" aria-label="Colour-blind palette, including pure grayscale achromatopsia">
+    <select id="palette-select" aria-label="Colour-blind palette, including pure grayscale achromatopsia" title="Choose colours that work for your kind of colour blindness. The grey-only choice is for people who see no colour at all.">
       <option value="default">Default (Deluxe Posh)</option>
       <option value="deuteranomaly">Deuteranomaly</option>
       <option value="protanomaly">Protanomaly</option>
@@ -74,56 +74,70 @@
     </select>
     <h3>Text and spacing</h3>
     <label for="text-size">Text size: <span id="text-size-value">100%</span></label>
-    <input id="text-size" type="range" min="80" max="200" step="5" value="100" aria-label="Text size, 80 to 200 percent">
+    <input id="text-size" type="range" min="80" max="200" step="5" value="100" aria-label="Text size, 80 to 200 percent" title="Make the words bigger or smaller.">
     <label for="line-spacing">Line spacing: <span id="line-spacing-value">1.5</span></label>
-    <input id="line-spacing" type="range" min="1.0" max="2.0" step="0.1" value="1.5" aria-label="Line spacing, 1.0 to 2.0">
+    <input id="line-spacing" type="range" min="1.0" max="2.0" step="0.1" value="1.5" aria-label="Line spacing, 1.0 to 2.0" title="Change the space between lines of words.">
     <label for="letter-spacing">Letter spacing: <span id="letter-spacing-value">0.02em</span> (moderate default; too wide breaks letter grouping)</label>
-    <input id="letter-spacing" type="range" min="-0.02" max="0.12" step="0.01" value="0.02" aria-label="Letter spacing, minus 0.02 to 0.12 em">
+    <input id="letter-spacing" type="range" min="-0.02" max="0.12" step="0.01" value="0.02" aria-label="Letter spacing, minus 0.02 to 0.12 em" title="Change the space between letters. A little helps; too much makes words hard to read.">
     <label for="saturation">Colour saturation: <span id="saturation-value">100%</span></label>
-    <input id="saturation" type="range" min="0" max="100" step="5" value="100" aria-label="Colour saturation, 0 to 100 percent, 0 is monochrome">
-    <button type="button" id="reset-settings" aria-label="Reset all accessibility settings to defaults">Reset accessibility settings</button>
+    <input id="saturation" type="range" min="0" max="100" step="5" value="100" aria-label="Colour saturation, 0 to 100 percent, 0 is monochrome" title="Make colours stronger or weaker. All the way down is grey only.">
+    <button type="button" id="reset-settings" aria-label="Reset all accessibility settings to defaults" title="Put all the reading and colour settings back to how they started.">Reset accessibility settings</button>
   </section>
 
   <section class="regular" id="regular-settings" aria-label="Regular settings">
     <h2>Regular Settings</h2>
     <p>These are product preferences, not access needs. They live here, not in the Accessibility Suite.</p>
     <label for="graph-density">Graph density:</label>
-    <select id="graph-density" aria-label="Graph density: sparse, balanced, or dense">
+    <select id="graph-density" aria-label="Graph density: sparse, balanced, or dense" title="Choose how many memories to show at once: few, a balanced amount, or many.">
       <option value="sparse">Sparse</option>
       <option value="balanced" selected>Balanced</option>
       <option value="dense">Dense</option>
     </select>
     <label for="snapshot-schedule">Snapshot schedule:</label>
-    <select id="snapshot-schedule" aria-label="Snapshot schedule">
+    <select id="snapshot-schedule" aria-label="Snapshot schedule" title="Choose how often a backup copy of your memories is made.">
       <option value="7d" selected>Every 7 days</option>
       <option value="1d">Daily</option>
       <option value="30d">Every 30 days</option>
       <option value="now">Manual (Sync Now only)</option>
     </select>
     <label for="backup-destination">Backup destination:</label>
-    <select id="backup-destination" aria-label="Backup destination: Supabase or Google Drive">
+    <select id="backup-destination" aria-label="Backup destination: Supabase or Google Drive" title="Choose where your backup copy of your memories is kept.">
       <option value="supabase" selected>Supabase</option>
       <option value="drive">Google Drive</option>
     </select>
     <label for="token-budget">Default token budget: <span id="token-budget-value">200</span></label>
-    <input id="token-budget" type="range" min="50" max="1000" step="50" value="200" aria-label="Default token budget, 50 to 1000">
+    <input id="token-budget" type="range" min="50" max="1000" step="50" value="200" aria-label="Default token budget, 50 to 1000" title="Set how much work the app may do when it answers. A bigger number lets it do more, and costs more.">
     <label for="reading-level">Explainer reading level:</label>
-    <select id="reading-level" aria-label="Explainer reading level">
+    <select id="reading-level" aria-label="Explainer reading level" title="Choose short plain explanations or longer detailed ones.">
       <option value="plain" selected>Plain</option>
       <option value="detailed">Detailed</option>
     </select>
     <label for="microbot-mode">Micro-bot mode:</label>
-    <select id="microbot-mode" aria-label="Micro-bot mode: Simple or Pro">
+    <select id="microbot-mode" aria-label="Micro-bot mode: Simple or Pro" title="Choose the simple morning summary helper or the advanced watch helper.">
       <option value="simple" selected>Simple Mode (Morning Digest)</option>
       <option value="pro">Pro Mode (Allowance-Gated Sentinel)</option>
     </select>
     <label for="palette-choice">Brand palette:</label>
-    <select id="palette-choice" aria-label="Brand palette selection">
+    <select id="palette-choice" aria-label="Brand palette selection" title="Choose the look of the page: the dark fancy style or the light fancy style.">
       <option value="posh" selected>Deluxe Posh</option>
       <option value="posh-light">Deluxe Posh Light</option>
     </select>
-    <button type="button" id="toggle-sound" aria-pressed="false" aria-label="Sound effects on or off">Sound: off</button>
-    <button type="button" id="toggle-notifications" aria-pressed="false" aria-label="Notifications on or off">Notifications: off</button>
+    <button type="button" id="toggle-sound" aria-pressed="false" aria-label="Sound effects on or off" title="Turn sounds on or off.">Sound: off</button>
+    <button type="button" id="toggle-notifications" aria-pressed="false" aria-label="Notifications on or off" title="Turn pop-up messages on or off.">Notifications: off</button>
+  </section>
+
+  <section id="plain-language-guide" aria-label="Plain-language guide">
+    <h2>Plain-language guide</h2>
+    <p>Every button and box on this page has a short, plain-words tip. Hold your pointer over it to read it.</p>
+    <ul>
+      <li>A memory is one thing you asked Hive-Mind to remember, like "The shop opens at 9am."</li>
+      <li>The picture shows your memories as dots and shapes. Lines join memories that share a word or idea. Every dot is also written out as words below the picture, so you never have to rely on colour alone.</li>
+      <li>A snapshot is a backup copy of all your memories. It is made on the schedule you choose, and kept where you choose. Making a backup copy never deletes anything.</li>
+      <li>The token meter counts how much work the app has done. Your token budget is the most work it may do for one answer. Bigger answers use more tokens.</li>
+      <li>The micro-bot is a small helper. Simple mode writes you a short morning summary. Pro mode watches for changes and only acts within the spending limit you set.</li>
+      <li>The Accessibility Suite only changes how the page looks and reads: colours, text size, spacing, and movement. It never deletes or changes your memories.</li>
+      <li>If anything ever looks wrong, press Reset accessibility settings to go back to the starting look.</li>
+    </ul>
   </section>
 </main>
 <footer>

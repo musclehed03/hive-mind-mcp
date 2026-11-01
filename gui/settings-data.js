@@ -12,15 +12,28 @@ const HIVEMIND_PALETTES = {
   "protanopia": {"label": "Protanopia", "background": "#0f1216", "text": "#ffffff", "accent": "#0072b2", "border": "#5a5a5a", "node": "#1a2028", "edge": "#e69f00", "grayscale": false},
   "tritanomaly": {"label": "Tritanomaly", "background": "#14101c", "text": "#f5edf7", "accent": "#d55e00", "border": "#3a2e4a", "node": "#241c30", "edge": "#009e73", "grayscale": false},
   "tritanopia": {"label": "Tritanopia", "background": "#14101c", "text": "#f5edf7", "accent": "#009e73", "border": "#3a2e4a", "node": "#241c30", "edge": "#cc79a7", "grayscale": false},
-  "achromatopsia": {"label": "Achromatopsia (pure grayscale)", "background": "#ffffff", "text": "#000000", "accent": "#595959", "border": "#000000", "node": "#ffffff", "edge": "#000000", "grayscale": true}
+  "achromatopsia": {"label": "Achromatopsia (pure grayscale)", "background": "#ffffff", "text": "#000000", "accent": "#595959", "border": "#000000", "node": "#808080", "edge": "#000000", "grayscale": true}
 };
 const HIVEMIND_PRESETS = {
   "dyslexia": {"label": "Dyslexia", "settings": {"readable_font": true, "text_scale": 110, "line_height": 1.6, "letter_spacing_em": 0.02, "bold": false, "focus_mode": true, "safe_motion": true}},
   "adhd_focus": {"label": "ADHD / Focus", "settings": {"focus_mode": true, "safe_motion": true, "simplified": true, "reading_guide": true, "text_scale": 105, "line_height": 1.5, "letter_spacing_em": 0.01}},
   "vision_impaired": {"label": "Vision Impaired", "settings": {"high_contrast": true, "bold": true, "text_scale": 150, "line_height": 1.6, "letter_spacing_em": 0.02, "large_cursor": true, "focus_outline": true}},
   "seizure_safe": {"label": "Seizure Safe", "settings": {"safe_motion": true, "saturation": 20, "high_contrast": false, "focus_mode": true, "text_scale": 100, "line_height": 1.5, "letter_spacing_em": 0.01}},
-  "achromatopsia": {"label": "Achromatopsia", "settings": {"colorblind_palette": "achromatopsia", "light_theme": true, "high_contrast": true, "bold": true, "text_scale": 110, "line_height": 1.6, "letter_spacing_em": 0.02}}
+  "achromatopsia": {"label": "Achromatopsia", "settings": {"colorblind_palette": "achromatopsia", "bold": true, "text_scale": 110, "line_height": 1.6, "letter_spacing_em": 0.02}}
 };
+/* The achromatopsia preset sets ONLY the palette (plus bold/text
+   sizing). It deliberately does NOT set high_contrast or light_theme:
+   the achromatopsia palette is already a light, high-contrast
+   grayscale scheme (white background, black text). The body-class
+   rules for high_contrast/light_theme set the same colour variables
+   on body and would override the palette for the page, while the
+   canvas used to read its colours from :root — black text on a black
+   page, white nodes blown out. Keeping the preset to the palette
+   alone, and having the canvas read the colours body actually
+   renders with, keeps page and canvas in agreement in every state.
+   The achromatopsia node fill is mid-grey (#808080), not white: a
+   white node on the palette's white background would be invisible
+   except for its outline. */
 /* Letter-spacing slider bounds (em). Default 0.02em is moderate on
    purpose: spacing pulled too wide breaks letter grouping for
    dyslexic readers. The slider goes down as well as up, cap 0.12em. */

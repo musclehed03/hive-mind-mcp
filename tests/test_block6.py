@@ -286,6 +286,159 @@ def test_slider_sync_does_not_rewrite_focused_slider():
     assert 'addEventListener("change"' in js
 
 
+# -- achromatopsia blackout fix (Sonja's live report, 2026-11-01) -----------
+
+def _contrast_ratio(hex_a, hex_b):
+    def lum(hexval):
+        r, g, b = (int(hexval[i:i + 2], 16) / 255 for i in (1, 3, 5))
+        vals = []
+        for c in (r, g, b):
+            vals.append(c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4)
+        return 0.2126 * vals[0] + 0.7152 * vals[1] + 0.0722 * vals[2]
+    l1, l2 = lum(hex_a), lum(hex_b)
+    if l1 < l2:
+        l1, l2 = l2, l1
+    return (l1 + 0.05) / (l2 + 0.05)
+
+
+def _css_body_rule_vars(css, selector):
+    """Custom properties set by one `body.<class>` rule in styles.css."""
+    match = re.search(re.escape(selector) + r"\s*\{([^}]*)\}", css)
+    assert match, selector
+    return dict(re.findall(r"--([\w-]+):\s*([^;]+);", match.group(1)))
+
+
+def test_canvas_colours_come_from_body_not_document_element():
+    # Palette variables are set inline on :root, but body class rules
+    # (high-contrast, light theme) set the same variables on body and
+    # win for the page, because an element's own value beats an
+    # inherited one. The transparent canvas sits on the body
+    # background, so reading :root drew black text on a black page
+    # (the achromatopsia blackout). renderGraph must read body.
+    js = _read("app.js")
+    start = js.index("function renderGraph()")
+    end = js.index("function loadData()", start)
+    body = js[start:end]
+    assert "getComputedStyle(document.body)" in body
+    assert "getComputedStyle(document.documentElement)" not in body
+    # The canvas background is painted explicitly with the same --bg,
+    # so it never depends on what shows through the transparent canvas.
+    assert "--bg" in body and "fillRect" in body
+
+
+def test_achromatopsia_preset_has_no_conflicting_theme_flags():
+    # The preset used to set high_contrast=true and light_theme=true
+    # alongside a white-background palette. The body rules then made
+    # the page black while the canvas still read white-background
+    # colours from :root. The palette is already light and
+    # high-contrast on its own; the preset must set the palette only.
+    presets = _extract_json_object(_read("settings-data.js"), "HIVEMIND_PRESETS")
+    ach = presets["achromatopsia"]["settings"]
+    assert ach["colorblind_palette"] == "achromatopsia"
+    assert ach.get("high_contrast") is not True
+    assert ach.get("light_theme") is not True
+
+
+def test_effective_canvas_text_contrasts_in_every_state():
+    # Simulate the cascade the canvas now reads: palette variables
+    # (inline on :root, inherited by body) overridden by body class
+    # rules when high_contrast or light_theme is on. Canvas text
+    # must contrast with the canvas background in every state Sonja
+    # re-checks, including achromatopsia with high contrast on/off.
+    palettes = _extract_json_object(_read("settings-data.js"), "HIVEMIND_PALETTES")
+    css = _read("styles.css")
+    hc = _css_body_rule_vars(css, "body.high-contrast")
+    light = _css_body_rule_vars(css, "body.light-theme")
+    states = [
+        ("default", {}),
+        ("default", {"high_contrast": True}),
+        ("achromatopsia", {}),
+        ("achromatopsia", {"high_contrast": True}),
+        ("achromatopsia", {"light_theme": True}),
+    ]
+    # CSS variables are --bg/--text/...; palette keys are
+    # background/text/... — map them so the simulation overrides the
+    # same slot the real cascade overrides.
+    def _apply(effective, rule_vars):
+        keymap = {"bg": "background", "text": "text", "accent": "accent",
+                  "border": "border", "edge": "edge", "node": "node"}
+        for var, value in rule_vars.items():
+            if var in keymap:
+                effective[keymap[var]] = value.strip()
+    for palette_name, flags in states:
+        effective = dict(palettes[palette_name])
+        if flags.get("high_contrast"):
+            _apply(effective, hc)
+        elif flags.get("light_theme"):
+            _apply(effective, light)
+        bg, text = effective["background"], effective["text"]
+        assert _contrast_ratio(bg, text) >= 4.5, (palette_name, flags, bg, text)
+
+
+def test_achromatopsia_node_is_visible_on_either_background():
+    # The old node fill was #ffffff: invisible on the palette's white
+    # background, and a blown-out white oval on a black page. The
+    # fill must be a mid-grey: visible against both white and black.
+    palettes = _extract_json_object(_read("settings-data.js"), "HIVEMIND_PALETTES")
+    ach = palettes["achromatopsia"]
+    assert ach["node"] != ach["background"]
+    assert ach["node"] != ach["text"]
+    hexval = ach["node"].lstrip("#")
+    channels = [int(hexval[i:i + 2], 16) for i in (0, 2, 4)]
+    assert all(0x40 <= c <= 0xBF for c in channels), ach["node"]
+
+
+def test_other_palettes_unchanged():
+    # Dyslexia and the other colour-blind palettes work well (Sonja).
+    # Their values must not move while achromatopsia is fixed.
+    palettes = _extract_json_object(_read("settings-data.js"), "HIVEMIND_PALETTES")
+    expected = {
+        "deuteranomaly": ("#101418", "#f2f2f2", "#e69f00"),
+        "protanomaly": ("#101418", "#f2f2f2", "#009e73"),
+        "deuteranopia": ("#0f1216", "#ffffff", "#e69f00"),
+        "protanopia": ("#0f1216", "#ffffff", "#0072b2"),
+        "tritanomaly": ("#14101c", "#f5edf7", "#d55e00"),
+        "tritanopia": ("#14101c", "#f5edf7", "#009e73"),
+    }
+    for name, (bg, text, accent) in expected.items():
+        assert (palettes[name]["background"], palettes[name]["text"],
+                palettes[name]["accent"]) == (bg, text, accent), name
+
+
+def test_every_control_has_plain_language_title(parsed):
+    # Every button, select, and range input carries a one-sentence,
+    # plain-words title (a hover tip). Aria-labels are untouched;
+    # title is additive. No jargon: no tool, service, or file names.
+    for tag, attrs in parsed.tags:
+        if tag in ("button", "select", "input"):
+            title = attrs.get("title", "")
+            assert len(title) >= 15, (tag, attrs.get("id"), title)
+            assert not any(word in title for word in
+                           ("MCP", "Supabase", "API", "JSON", "SQLite", "stdio")), title
+    html = _read("index.html")
+    assert 'title="Choose how often a backup copy of your memories is made."' in html
+    assert 'title="Set how much work the app may do when it answers.' in html
+
+
+def test_plain_language_guide_exists(parsed):
+    # A visible plain-words guide, after Regular Settings, explaining
+    # what a memory, the graph, a snapshot/backup, the token
+    # meter/budget, and the micro-bot modes are — and that the
+    # Accessibility Suite never deletes anything.
+    html = _read("index.html")
+    assert 'id="plain-language-guide"' in html
+    assert html.index('id="regular-settings"') < html.index('id="plain-language-guide"')
+    guide_start = html.index('id="plain-language-guide"')
+    guide = html[guide_start:]
+    assert "Plain-language guide" in guide
+    assert "backup copy" in guide
+    assert "snapshot" in guide.lower()
+    assert "token" in guide.lower()
+    assert "micro-bot" in guide.lower()
+    assert "never deletes" in guide
+    assert "Accessibility Suite" in guide
+
+
 # -- explain -----------------------------------------------------------------
 
 def test_explain_tool_and_pillar_and_setting():

@@ -54,6 +54,9 @@ button[aria-pressed="true"] { border-style: solid; border-color: var(--accent); 
 label { display: block; margin: 8px 0; }
 .graph-wrap { border: 2px solid var(--border); position: relative; min-height: 320px; }
 canvas, svg.graph { width: 100%; height: 320px; display: block; }
+/* The canvas background matches the page background, so canvas
+   labels always sit on the colour they were drawn against. */
+canvas { background: var(--bg); }
 #reading-guide { position: fixed; left: 0; right: 0; height: 2em; background: rgba(200, 109, 215, 0.25); border-top: 2px solid var(--accent); border-bottom: 2px solid var(--accent); pointer-events: none; display: none; z-index: 50; }
 body.reading-guide #reading-guide { display: block; }
 #diff-toast { border: 2px dashed var(--accent); padding: 8px; margin: 12px; }

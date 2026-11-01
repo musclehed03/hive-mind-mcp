@@ -278,8 +278,22 @@
       canvas.style.display = "block"; if (svg) svg.style.display = "none";
       var ctx = canvas.getContext("2d");
       canvas.width = 600; canvas.height = 320;
-      var styles = getComputedStyle(document.documentElement);
+      /* Read colours from body, NOT from documentElement. Palette
+         variables are set inline on :root, but body class rules
+         (high-contrast, light theme) set the same variables on body
+         and win for everything the page actually paints, because an
+         element's own value beats an inherited one. The canvas is
+         transparent, so its background IS the body's background; if
+         the canvas read :root it could draw black text on a black
+         page (the achromatopsia blackout). Reading body makes the
+         canvas use exactly the colours the page renders with, in
+         every palette/toggle combination. The background is also
+         painted explicitly below, so the canvas never depends on
+         what shows through it. */
+      var styles = getComputedStyle(document.body);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = styles.getPropertyValue("--bg").trim() || "#14101c";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
       // Chunked rendering: 50 nodes per animation frame, never blocking.
       var nodes = graphData.nodes.slice();
       var i = 0;
