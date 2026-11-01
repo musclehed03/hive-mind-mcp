@@ -45,13 +45,20 @@ Honesty is part of the build. In this repo, as submitted:
   the snapshot bundler with verified callbacks, the GUI, the
   Accessibility Suite, and the micro-bot templates. All of it runs
   local-first with nothing configured.
-- **Fake (clearly labelled in code):** the Meta client
+- **Fake (clearly labelled in code, and the default):** the Meta client
   (`app/fake_meta.py`, `FakeMetaClient`, model name
   `muse-spark-1.3-fake`) and the Supabase/Drive adapters
   (`app/fake_supabase.py`, in-memory only). They return canned,
   deterministic responses and make no network calls. Every payload
   that used one says so (`live: false`, and the cross-hatch trust
   signals name the fake client).
+- **Live adapters exist but are never used by default:**
+  `app/live_meta.py` (real Meta Model API, stdlib `urllib` only)
+  and `app/live_supabase.py` (real Supabase Storage, stdlib
+  `urllib` only), selected only by the factory in
+  `app/live_clients.py` when `HIVE_MIND_LIVE=1` and the relevant
+  credential is present in the environment. They are tested with
+  mocked HTTP only; no live call has been made from this codebase.
 - **UNVERIFIED live gates:** the real Meta API calls (Block 4) and the
   real Supabase snapshot (Block 5) have never run from this codebase.
   They are documented below as exact commands for Sonja's machine.
@@ -145,7 +152,7 @@ serves SSE when it lands.
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt   # sqlite-vec only
-.venv/bin/python -m pytest tests/ -q        # full gate: 107 tests
+.venv/bin/python -m pytest tests/ -q        # full gate: 134 tests
 .venv/bin/python -m app.mcp_server --stdio # MCP over stdio, exits on EOF
 .venv/bin/python -m app.mcp_server --list-tools
 ```
@@ -187,8 +194,12 @@ is exercised end-to-end in `tests/test_block1.py`.
 See `.env.example` (placeholders only, never real values). With nothing
 configured, everything runs local-first: the fake Meta client answers
 verification calls and the snapshot backup runs in `local_only` mode.
-Real clients are wired only by the live-gate steps below, on Sonja's
-machine, with her own keys — never in this repo.
+The live clients in `app/live_meta.py` / `app/live_supabase.py` are
+selected only when `HIVE_MIND_LIVE=1` is set in the shell and the
+relevant credential is present in the environment (see
+`app/live_clients.py`); otherwise the factory always returns the
+fakes. Keys live only in the shell / local `.env` on Sonja's
+machine — never in this repo, never in chat.
 
 ## Live gates — UNVERIFIED (Sonja-side only)
 
@@ -199,47 +210,91 @@ monthly spend — there is no second notification and no hard cap**.
 Treat **$100 as the hard stop** and keep a $50 buffer. Do not run the
 live gate until Billing shows the free credits applied.
 
-### Block 4 — 3–5 real Meta Model API calls
+### Block 4 — 3–5 real Meta Model API calls (one command)
 
-Prerequisite: `META_API_KEY` set in the shell (never written to a file
-in this repo, never pasted in chat), Billing shows free credits, and
-the $100 notification is on.
+Prerequisite: `META_API_KEY` set in the shell (never written to a
+file in this repo, never pasted in chat), Billing shows free
+credits, and the $100 notification is on. The live client
+(`app/live_meta.py`) is already wired behind the same
+`verify()`/`compress()` interface as the fake client; the only
+switch is `HIVE_MIND_LIVE=1`. It enforces a hard budget of 5 live
+calls per process, runs the scrubber before anything is sent, and
+returns an error dict — never a fake success — on any failure.
+The request shape is the OpenAI-compatible chat-completions call
+to `https://api.meta.ai/v1` (endpoint/model configurable via
+`HIVE_MIND_META_BASE_URL` / `HIVE_MIND_META_MODEL`); if Meta
+rejects a field, adjust the configuration — do not guess a
+different API.
 
 ```bash
 cd hive-mind-mcp && git pull
 export META_API_KEY='PASTE_KEY_HERE_IN_THIS_SHELL_ONLY'
+export HIVE_MIND_LIVE=1
 .venv/bin/python - <<'PYEOF'
-import os
-print("key present:", bool(os.environ.get("META_API_KEY")))
-print("key prefix:", os.environ["META_API_KEY"][:4])
+import os, tempfile
+from app.dispatch import dispatch_tool
+from app.store import Store
+store = Store(db_path=os.path.join(tempfile.mkdtemp(), "live-gate.db"),
+              vault_dir=tempfile.mkdtemp())
+facts = [
+    ("The shop opens at 9am on Saturdays", "general", "live gate notes"),
+    ("The garden grows tomatoes in summer", "general", "live gate notes"),
+    ("The library opens at 10am on weekdays", "general", "live gate notes"),
+]
+for fact, domain, citation in facts:
+    payload, err = dispatch_tool("hivemind_crosshatch_verify", {
+        "candidate_fact": fact, "domain_repo": domain,
+        "source_citation": citation, "supersede_id": ""}, store=store)
+    print(payload["status"], "live:", payload.get("live"),
+          payload.get("verified_fact", payload.get("error", ""))[:100])
+store.close()
 PYEOF
+unset META_API_KEY HIVE_MIND_LIVE
 ```
 
-Then, and only then, wire the real client: the fake client in
-`app/fake_meta.py` must be replaced by an OpenAI-compatible call to
-`https://api.meta.ai/v1` behind the same interface (same method names,
-same payload shape), run the 3–5 verification calls through
-`hivemind_crosshatch_verify`, and confirm the spend on the Billing
-page stays under $100. If the Billing page does not show the free
-credits, stop — the card will be charged instead.
+Check the Billing page afterwards: spend must stay under the $100
+notification, with the $50 buffer intact. If any payload says
+`status: "error"`, or Billing does not show the free credits, stop
+— the card will be charged instead of the credits.
 
-### Block 5 — one real snapshot to Supabase
+### Block 5 — one real snapshot to Supabase (one command)
 
 Prerequisite: the `hive-mind` project exists inside the existing
 "Dollhouse Deviants Co." organisation on Supabase (sign in with
 GitHub as `musclehed03`), the private bucket `hive-mind-snapshots`
 exists, and `.env` holds the Supabase URL + keys (created with `nano
 .env` on that machine — never in a word processor, never committed,
-never pasted in chat).
+never pasted in chat). The live adapter (`app/live_supabase.py`)
+is already wired behind the fake adapter's interface; the only
+switch is `HIVE_MIND_LIVE=1` with the credentials exported from
+`.env` in that shell.
 
 ```bash
 cd hive-mind-mcp && git pull
-nano .env   # SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
-.venv/bin/python -m pytest tests/test_block5.py -q
+set -a; source .env; set +a
+export HIVE_MIND_LIVE=1
+.venv/bin/python - <<'PYEOF'
+import os, tempfile
+from app.dispatch import dispatch_tool
+from app.live_clients import get_snapshot_adapter
+from app.store import Store
+store = Store(db_path=os.path.join(tempfile.mkdtemp(), "live-gate.db"),
+              vault_dir=tempfile.mkdtemp())
+payload, err = dispatch_tool("hivemind_snapshot_backup", {
+    "destination_target": "supabase", "schedule_interval": "now",
+    "user_handshake_token": "yes"}, store=store)
+print(payload["status"], "backed_up:", payload.get("backed_up"),
+      "verified_callback:", payload.get("verified_callback"),
+      payload.get("storage_path", payload.get("error", "")))
+assert payload["status"] == "ok" and payload["verified_callback"]
+get_snapshot_adapter("supabase").delete(payload["storage_path"])
+print("test snapshot deleted:", payload["storage_path"])
+store.close()
+PYEOF
+unset META_API_KEY HIVE_MIND_LIVE SUPABASE_URL SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY
 ```
 
-Then run one `hivemind_snapshot_backup` with destination `supabase`
-and a handshake token, confirm the re-download hash check passes in
-the payload, confirm the object in the private bucket, then delete
-the test snapshot from the bucket. If the upload fails, the payload
-must say so — never report a failed upload as backed up.
+Confirm the object appeared in the private bucket before the
+delete, and that the delete removed it. If the payload says
+`status: "error"`, the upload failed — never report a failed
+upload as backed up.

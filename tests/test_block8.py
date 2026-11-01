@@ -42,16 +42,27 @@ def test_no_polling_or_timers_in_gui():
 
 
 def test_no_network_imports_anywhere_in_app():
+    # Revised for the live adapters (parent task, Blocks 4-5 live
+    # gates): stdlib urllib imports are allowed ONLY in
+    # app/live_meta.py and app/live_supabase.py, the env-gated live
+    # clients that are never used by default. Every other app/ file
+    # is still banned from all network imports. Widening this
+    # exemption beyond the two live files would weaken the guard.
     banned = ("socket", "urllib", "http.client", "requests", "httpx", "websocket")
+    allowed = {"live_meta.py", "live_supabase.py"}
     for path in _walk((".py",), base="app"):
+        if os.path.basename(path) in allowed:
+            banned_here = ("socket", "http.client", "requests", "httpx", "websocket")
+        else:
+            banned_here = banned
         with open(path, encoding="utf-8") as f:
             tree = ast.parse(f.read())
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):
                 for alias in node.names:
-                    assert alias.name.split(".")[0] not in banned, path
+                    assert alias.name.split(".")[0] not in banned_here, path
             elif isinstance(node, ast.ImportFrom) and node.module:
-                assert node.module.split(".")[0] not in banned, path
+                assert node.module.split(".")[0] not in banned_here, path
 
 
 def test_fake_clients_are_labelled_fake():

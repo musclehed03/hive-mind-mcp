@@ -16,6 +16,7 @@ import os
 from .capture import capture_idea, query_temporal
 from .crosshatch import crosshatch_verify
 from .explain import explain
+from .live_clients import get_meta_client, get_snapshot_adapter
 from .microbot import spawn_microbot
 from .prune import prune_memory
 from .scrubber import scrub_text
@@ -67,10 +68,13 @@ def _query_handler(arguments, store):
 
 
 def _verify_handler(arguments, store):
+    # The meta client comes from the env-gated factory: fake by
+    # default, live only when HIVE_MIND_LIVE=1 and a key is present.
     return crosshatch_verify(
         arguments["candidate_fact"], arguments["domain_repo"],
         arguments["source_citation"], arguments["supersede_id"],
         store if store is not None else get_store(),
+        meta_client=get_meta_client(),
     )
 
 
@@ -94,14 +98,14 @@ def _explain_handler(arguments, store):
 
 
 def _snapshot_handler(arguments, store):
-    # No cloud adapter in the MCP server: local-only mode, by design.
-    # A live adapter is supplied only by Sonja-side code after the
-    # Block 5 live gate, never from this codebase's defaults.
+    # Adapter from the env-gated factory: None (local-only mode) by
+    # default, a live Supabase adapter only when HIVE_MIND_LIVE=1
+    # and Supabase credentials are present in the environment.
     return snapshot_backup(
         arguments["destination_target"], arguments["schedule_interval"],
         arguments["user_handshake_token"],
         store if store is not None else get_store(),
-        adapter=None,
+        adapter=get_snapshot_adapter(arguments["destination_target"]),
     )
 
 

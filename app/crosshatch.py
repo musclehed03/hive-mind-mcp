@@ -1,7 +1,9 @@
 """Block 4 — Cross-Hatch Verify (fake Meta client only, no live calls).
 
 A candidate fact is scrubbed first, then polled against the 6 Pillars
-(via the FAKE Meta client — canned, deterministic, no network) and
+(via the FAKE Meta client by default — canned, deterministic, no
+network; a live client may be injected by the dispatcher only when
+the env-gated factory in ``app/live_clients.py`` opts in) and
 against stored facts in the same domain repo with a local token
 check. Nothing is overwritten silently: on conflict the old fact
 stays active until the caller re-issues the call with
@@ -31,9 +33,27 @@ _FAKE_CLIENT = FakeMetaClient()
 STALE_AFTER_DAYS = 90
 
 
-def trust_signals(source_citation, status="verified"):
-    """OKF trust signals for one verified fact."""
+def trust_signals(source_citation, status="verified", live=False, model=None):
+    """OKF trust signals for one verified fact.
+
+    The default (``live=False``) is the fake-client wording the
+    Block 4 tests assert: a fake verification is never dressed up
+    as a live one. When a live client verified the fact, the
+    signals name the live model honestly instead.
+    """
     stale = (datetime.now(timezone.utc) + timedelta(days=STALE_AFTER_DAYS)).date().isoformat()
+    if live:
+        return {
+            "sources": [source_citation],
+            "generated_by": f"hivemind_crosshatch_verify (live Meta Model API, model {model})",
+            "verified_by": "live Meta verify + local token-overlap conflict check",
+            "stale_after": stale,
+            "status": status,
+            "attested_computation": (
+                "live model JSON verdict, parsed and validated, plus "
+                "token-overlap conflict check against stored active facts"
+            ),
+        }
     return {
         "sources": [source_citation],
         "generated_by": "hivemind_crosshatch_verify (fake-meta client, no live model)",
@@ -76,23 +96,46 @@ def find_conflict(store, candidate_text, domain_repo):
 
 
 def crosshatch_verify(candidate_fact, domain_repo, source_citation,
-                      supersede_id, store, fake_client=None):
-    """Verify, store, supersede, or report a conflict. Never overwrites."""
+                      supersede_id, store, fake_client=None, meta_client=None):
+    """Verify, store, supersede, or report a conflict. Never overwrites.
+
+    ``fake_client`` is the historical parameter name (Block 4 tests
+    pass the fake that way); ``meta_client`` takes precedence when
+    given. Either may be a fake or a live client — both expose
+    ``verify()`` with the same return shape. The default, with
+    neither given, is the module fake client. A client error dict
+    (missing key, budget, scrub refusal, HTTP failure) becomes a
+    ``status: "error"`` payload and stores nothing — never a fake
+    success dressed up as a verification.
+    """
     if not candidate_fact or not candidate_fact.strip():
         raise ValueError("candidate_fact must not be empty")
     if not source_citation or not source_citation.strip():
         raise ValueError("source_citation must not be empty")
     scrubbed = scrub_before_write(candidate_fact, "standard")
     fact = scrubbed["scrubbed_text"]
-    client = fake_client or _FAKE_CLIENT
+    client = meta_client or fake_client or _FAKE_CLIENT
     check = client.verify(fact, domain_repo)
+    is_live = bool(check.get("live"))
+    if check.get("error"):
+        return {
+            "status": "error",
+            "error": check["error"],
+            "verified_fact": "",
+            "trapped_count": scrubbed["trapped_count"],
+            "live": is_live,
+        }
     if check["verdict"] == "rejected":
+        reason = ("failed the security pillar in the live pillar check"
+                  if is_live else
+                  "failed the security pillar in the fake pillar check")
         return {
             "status": "rejected",
-            "reason": "failed the security pillar in the fake pillar check",
+            "reason": reason,
             "pillar_failures": check["pillar_failures"],
             "verified_fact": "",
             "trapped_count": scrubbed["trapped_count"],
+            "live": is_live,
         }
 
     old = None
@@ -119,13 +162,20 @@ def crosshatch_verify(candidate_fact, domain_repo, source_citation,
                     "id to replace it, or keep the existing fact."
                 ),
                 "trapped_count": scrubbed["trapped_count"],
+                "live": is_live,
             }
 
     from .capture import extract_entities
 
-    provenance = trust_signals(source_citation)
+    provenance = trust_signals(source_citation, live=is_live,
+                               model=check.get("model"))
     provenance["scrubbed"] = scrubbed["trapped_count"] > 0
-    provenance["fake_verdict"] = check["verdict"]
+    if is_live:
+        provenance["live_verdict"] = check["verdict"]
+        provenance["model"] = check.get("model")
+        provenance["live"] = True
+    else:
+        provenance["fake_verdict"] = check["verdict"]
     new_id = store.remember(
         fact, entities=extract_entities(fact), source=source_citation,
         domain=domain_repo, provenance=provenance,
@@ -144,4 +194,6 @@ def crosshatch_verify(candidate_fact, domain_repo, source_citation,
         "superseded_id": old["id"] if old is not None else "",
         "trapped_count": scrubbed["trapped_count"],
         "fake_meta_calls": client.call_count,
+        "meta_calls": client.call_count,
+        "live": is_live,
     }

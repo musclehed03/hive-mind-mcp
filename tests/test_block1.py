@@ -240,6 +240,20 @@ def test_store_recall_empty_query_returns_recent(store):
 # network, no real secrets — is kept, precisely: no network imports or
 # calls anywhere in app/, and secret *patterns* are allowed only in
 # scrubber.py, where they match shapes and contain no real values.
+#
+# Revised again for the live adapters (parent task, Blocks 4-5 live
+# gates): network code is now allowed ONLY in app/live_meta.py and
+# app/live_supabase.py, the two env-gated live clients. This is a
+# narrowing, not a removal: every other app/ file is still banned
+# from network imports/calls, the live clients are never used by
+# default (see tests/test_live_adapters.py), and secret-shape
+# literals remain banned everywhere except scrubber.py (plus the
+# Authorization header wording, live files only). If this revision
+# is ever widened beyond the two live files, the guard has been
+# weakened and must be restored.
+
+_LIVE_NETWORK_FILES = {"live_meta.py", "live_supabase.py"}
+
 
 def test_no_network_or_secret_code_in_app():
     repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -248,11 +262,21 @@ def test_no_network_or_secret_code_in_app():
         if not fname.endswith(".py"):
             continue
         src = open(os.path.join(app_dir, fname)).read()
-        for banned in ("httpx", "requests.", "urllib.request", "socket.",
-                       "http.client", "urlopen", "socket"):
-            assert banned not in src, (fname, banned)
-        if fname != "scrubber.py":
+        if fname not in _LIVE_NETWORK_FILES:
+            for banned in ("httpx", "requests.", "urllib.request", "socket.",
+                           "http.client", "urlopen", "socket"):
+                assert banned not in src, (fname, banned)
+        else:
+            # Live files may use stdlib urllib only — no other client.
+            for banned in ("httpx", "requests.", "socket.", "http.client"):
+                assert banned not in src, (fname, banned)
+        if fname not in ("scrubber.py",) and fname not in _LIVE_NETWORK_FILES:
             for banned in ("sk-", "Bearer ", "ghp_"):
+                assert banned not in src, (fname, banned)
+        if fname in _LIVE_NETWORK_FILES:
+            # Live files need the Authorization header wording, but
+            # must never contain key-shaped literals.
+            for banned in ("sk-", "ghp_"):
                 assert banned not in src, (fname, banned)
         # No real-looking credential values anywhere, patterns excepted.
         assert "eyJ" not in src, fname

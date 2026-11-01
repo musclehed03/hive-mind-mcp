@@ -7,7 +7,10 @@ Theme: Build for Your World.
 
 - [x] All 8 `hivemind_` tools implemented, exact spec names/signatures
 - [x] Full pytest suite green (see README for the current count)
-- [x] No network in code/tests; fake Meta/Supabase clients only
+- [x] No live network calls made; default is fake Meta/Supabase
+      clients; live adapters (`app/live_meta.py`,
+      `app/live_supabase.py`) are env-gated (`HIVE_MIND_LIVE=1`) and
+      tested with mocked HTTP only
 - [x] No keys, tokens, secrets, or card details anywhere in the repo
 - [x] `.env.example` placeholders only; `.env` git-ignored
 - [x] Docker zero-config run documented (verify on a Docker machine —
