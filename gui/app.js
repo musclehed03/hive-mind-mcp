@@ -405,7 +405,7 @@
          what shows through it. */
       var styles = getComputedStyle(document.body);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = styles.getPropertyValue("--bg").trim() || "#0d0a12";
+      ctx.fillStyle = styles.getPropertyValue("--bg").trim() || "#14101c";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       // Chunked rendering: 50 nodes per animation frame, never blocking.
       var nodes = graphData.nodes.slice();

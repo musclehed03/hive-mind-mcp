@@ -2,12 +2,12 @@
    frames, dashed = secondary tags/links, dotted = tertiary controls.
    Meaning is never carried by colour alone: shapes + line styles do
    that work, so the pure-grayscale mode keeps full hierarchy.
-   Default palette is the Dollhouse Deviants look: neon pink #ff1e89
-   on near-black, restrained and dark. The typed colour-blind
-   palettes in settings-data.js override these variables at load. */
+   Default palette is the Deluxe Posh / Mature palette. The typed
+   colour-blind palettes in settings-data.js override these
+   variables at load. */
 :root {
-  --bg: #0d0a12; --text: #f7f2f8; --accent: #ff1e89; --border: #4a2b42;
-  --node: #201327; --edge: #a06a8c; --cyan: #2dd4ee;
+  --bg: #14101c; --text: #f5edf7; --accent: #c86dd7; --border: #3a2e4a;
+  --node: #2a2138; --edge: #8e7aa8;
   --font-scale: 1; --line-height: 1.5; --letter-spacing: 0.02em;
   --saturation: 100%;
   --radius: 14px;
@@ -55,7 +55,7 @@ header {
   margin: 20px 12px 4px; padding: 20px 24px;
   border: 2px solid var(--border); border-bottom: 3px solid var(--accent);
   border-radius: var(--radius);
-  background: linear-gradient(135deg, #1c0f22 0%, #0d0a12 60%);
+  background: linear-gradient(135deg, #2a2138 0%, #14101c 60%);
 }
 header img { flex: 0 0 auto; }
 header .header-text { flex: 1 1 320px; }
@@ -114,7 +114,7 @@ canvas, svg.graph { width: 100%; height: 340px; display: block; }
 /* The canvas background matches the page background, so canvas
    labels always sit on the colour they were drawn against. */
 canvas { background: var(--bg); }
-#reading-guide { position: fixed; left: 0; right: 0; height: 2em; background: rgba(255, 30, 137, 0.25); border-top: 2px solid var(--accent); border-bottom: 2px solid var(--accent); pointer-events: none; display: none; z-index: 50; }
+#reading-guide { position: fixed; left: 0; right: 0; height: 2em; background: rgba(200, 109, 215, 0.25); border-top: 2px solid var(--accent); border-bottom: 2px solid var(--accent); pointer-events: none; display: none; z-index: 50; }
 body.reading-guide #reading-guide { display: block; }
 /* Fast custom tooltip (standing SOP: ~500ms, snap up). One shared
    element, positioned by app.js. It uses the page's own CSS
