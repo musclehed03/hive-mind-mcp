@@ -129,7 +129,7 @@ node shapes carry all hierarchy in pure grayscale for achromatopsia.
 
 ## License
 
-No license chosen yet — TODO before public distribution.
+MIT License — see `LICENSE` (Copyright 2026 Sonja Kelley).
 
 ## Block 1 — Foundation (implemented)
 

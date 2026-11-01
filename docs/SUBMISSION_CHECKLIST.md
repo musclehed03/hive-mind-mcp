@@ -19,7 +19,7 @@ Theme: Build for Your World.
       machine (commands in README; UNVERIFIED until run)
 - [ ] Live gate, Block 5: one real snapshot to the private Supabase
       bucket, hash-check, then delete the test snapshot (UNVERIFIED)
-- [ ] License chosen before public distribution (TODO in README)
+- [x] License chosen: MIT (`LICENSE`, Copyright 2026 Sonja Kelley)
 
 ## Demo
 
