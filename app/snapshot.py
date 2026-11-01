@@ -98,21 +98,69 @@ def build_bundle(store):
     return bundle, manifest
 
 
-def _bundle_text_for_scrub_gate(bundle):
-    """Decoded fact text for the scrub gate (binary + manifest excluded).
+def _jsonl_fact_text(decoded):
+    """Fact text only, from one JSONL mirror file's decoded content.
 
-    Only the JSONL mirror and Markdown notes are scanned: the manifest
-    holds SHA-256 hashes, which are hashes, not secrets, and must not
-    trip the entropy pass. The gate runs at "standard" strictness for
-    the same reason — the entropy pass is for untrusted input text,
-    not for the bundle's own hashes and ids.
+    Each line is parsed as JSON and only its ``"text"`` field is kept.
+    System-generated ids, timestamps, hashes, and provenance metadata
+    never reach the scrub gate: a 32-hex-char memory id can end in a
+    run of digits that the standard PHONE pattern matches, which made
+    the gate randomly refuse clean bundles (~1 in 125 random ids in
+    one 500-id sample). Unparseable lines are skipped, never fatal.
+    """
+    chunks = []
+    for line in decoded.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            record = json.loads(line)
+        except (json.JSONDecodeError, ValueError):
+            continue
+        if isinstance(record, dict):
+            text = record.get("text")
+            if isinstance(text, str):
+                chunks.append(text)
+    return chunks
+
+
+def _note_body(decoded):
+    """A Markdown note with its YAML frontmatter removed.
+
+    Notes are written as ``---`` / ``id: ...`` / ``source: ...`` /
+    ``domain: ...`` / ``created: ...`` / ``---`` / body. Only the body
+    is fact text; the frontmatter holds the same system-generated id
+    (and timestamps) that must never reach the scrub gate.
+    """
+    lines = decoded.splitlines()
+    if lines and lines[0].strip() == "---":
+        for idx in range(1, len(lines)):
+            if lines[idx].strip() == "---":
+                return "\n".join(lines[idx + 1:])
+        return "\n".join(lines[1:])
+    return decoded
+
+
+def _bundle_text_for_scrub_gate(bundle):
+    """Fact text only, for the scrub gate (binary + manifest excluded).
+
+    Only the ``"text"`` field of each JSONL line and the body of each
+    Markdown note are scanned. The manifest is excluded (SHA-256
+    hashes are not secrets), and so are all system-generated ids,
+    timestamps, and provenance metadata, for the same reason: they
+    are not user fact text and their shapes can trip secret detectors.
+    The gate runs at "standard" strictness; a secret in the fact text
+    itself is still refused.
     """
     buf = io.BytesIO(bundle)
     chunks = []
     with zipfile.ZipFile(buf) as zf:
         for name in zf.namelist():
-            if name.endswith((".jsonl", ".md")):
-                chunks.append(zf.read(name).decode("utf-8", errors="ignore"))
+            decoded = zf.read(name).decode("utf-8", errors="ignore")
+            if name.endswith(".jsonl"):
+                chunks.extend(_jsonl_fact_text(decoded))
+            elif name.endswith(".md"):
+                chunks.append(_note_body(decoded))
     return "\n".join(chunks)
 
 

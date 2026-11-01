@@ -4,6 +4,7 @@ import hashlib
 import io
 import json
 import os
+import uuid
 import zipfile
 
 import pytest
@@ -15,7 +16,12 @@ from app.fake_supabase import (
     fake_drive_adapter,
     fake_supabase_adapter,
 )
-from app.snapshot import build_bundle, snapshot_backup
+from app.scrubber import contains_secret
+from app.snapshot import (
+    _bundle_text_for_scrub_gate,
+    build_bundle,
+    snapshot_backup,
+)
 from app.store import Store
 
 
@@ -54,6 +60,107 @@ def test_fake_adapter_upload_and_verified_callback(store):
     assert adapter.sha256(result["storage_path"]) == result["sha256"]
     assert result["sha256"] == hashlib.sha256(
         adapter.download(result["storage_path"])).hexdigest()
+
+
+def _find_gate_tripping_id():
+    """A random uuid4 hex whose JSONL line trips the scrub gate.
+
+    A 32-hex-char id ending in a long digit run matches the standard
+    PHONE pattern, so a small fraction of random ids trip
+    ``contains_secret`` at "standard" when the whole JSONL line is
+    scanned. Search until one is found (a few hundred draws on
+    average); the cap keeps the test bounded.
+    """
+    for _ in range(5000):
+        candidate = uuid.uuid4().hex
+        line = json.dumps({
+            "event": "remember", "id": candidate,
+            "text": "Backup me please", "entities": [], "source": "",
+            "domain": "general", "status": "active",
+            "created_at": "2026-11-01T00:00:00+00:00", "provenance": {},
+        }, sort_keys=True)
+        if contains_secret(line, "standard"):
+            return candidate
+    raise AssertionError("no gate-tripping id found in 5000 random uuids")
+
+
+def test_scrub_gate_scans_fact_text_only(store):
+    # Real bundle: no id or timestamp may reach the gate.
+    store.remember("Backup me please", domain="general")
+    bundle, _ = build_bundle(store)
+    gate_text = _bundle_text_for_scrub_gate(bundle)
+    assert "Backup me please" in gate_text
+    for mem in store.list_memories(limit=10000):
+        assert mem["id"] not in gate_text
+        assert mem["created_at"] not in gate_text
+    assert contains_secret(gate_text, "standard") is False
+
+    # Synthetic bundle: a gate-tripping id in the JSONL "id" field and
+    # in the note frontmatter must not trip the gate, an unparseable
+    # line must not crash it, and a secret in the fact text must trip.
+    tripping = _find_gate_tripping_id()
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("vault/memories.jsonl", json.dumps({
+            "event": "remember", "id": tripping,
+            "text": "Backup me please", "entities": [], "source": "",
+            "domain": "general", "status": "active",
+            "created_at": "2026-11-01T00:00:00+00:00", "provenance": {},
+        }, sort_keys=True) + "\nnot json {oops\n")
+        zf.writestr(f"vault/memories/{tripping}.md",
+                    f"---\nid: {tripping}\nsource: \ndomain: general\n"
+                    "created: 2026-11-01T00:00:00+00:00\n---\n\n"
+                    "Backup me please\n")
+    gate_text = _bundle_text_for_scrub_gate(buf.getvalue())
+    assert tripping not in gate_text
+    assert "Backup me please" in gate_text
+    assert contains_secret(gate_text, "standard") is False
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("vault/memories.jsonl", json.dumps({
+            "text": "contact test@example.com about the demo",
+        }) + "\n")
+    assert contains_secret(
+        _bundle_text_for_scrub_gate(buf.getvalue()), "standard") is True
+
+
+def test_snapshot_with_gate_tripping_memory_id_still_backs_up(store):
+    # Regression: a memory whose system-generated id would trip the
+    # gate if scanned whole must still back up. Store.remember()
+    # generates its own id, so rewrite the vault mirror to carry the
+    # tripping id, as if remember() had generated it; the gate reads
+    # the vault mirror, not the SQLite row.
+    tripping = _find_gate_tripping_id()
+    store.remember("Backup me please", domain="general")
+    jsonl_path = os.path.join(store.vault_dir, "memories.jsonl")
+    with open(jsonl_path, encoding="utf-8") as f:
+        records = [json.loads(line) for line in f if line.strip()]
+    for record in records:
+        record["id"] = tripping
+    with open(jsonl_path, "w", encoding="utf-8") as f:
+        for record in records:
+            f.write(json.dumps(record, sort_keys=True) + "\n")
+    notes_dir = os.path.join(store.vault_dir, "memories")
+    for fname in os.listdir(notes_dir):
+        if not fname.endswith(".md"):
+            continue
+        note_path = os.path.join(notes_dir, fname)
+        with open(note_path, encoding="utf-8") as f:
+            lines = f.read().splitlines()
+        lines = [f"id: {tripping}" if line.startswith("id: ") else line
+                 for line in lines]
+        new_path = os.path.join(notes_dir, f"{tripping}.md")
+        with open(new_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines) + "\n")
+        if new_path != note_path:
+            os.remove(note_path)
+    adapter = fake_supabase_adapter()
+    result = _snap(store, adapter=adapter)
+    assert result["status"] == "ok"
+    assert result["backed_up"] is True
+    assert result["verified_callback"] is True
+    assert adapter.upload_count == 1
 
 
 def test_upload_failure_never_reported_backed_up_and_local_kept(store):
