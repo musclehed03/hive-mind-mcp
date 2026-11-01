@@ -51,6 +51,12 @@ from .scrubber import scrub_before_write
 DEFAULT_BASE_URL = "https://api.meta.ai/v1"
 DEFAULT_MODEL = "muse-spark-1.3"
 DEFAULT_MAX_CALLS = 5
+# Reasoning tokens count against max_tokens. Verified live 2026-11-01:
+# Muse Spark spent 254 reasoning tokens on a trivial prompt and hit
+# finish_reason "length" with content None at max_tokens=256, leaving
+# no room for the visible answer. 1024 leaves room for reasoning
+# plus the short JSON/shorthand reply.
+DEFAULT_MAX_TOKENS = 1024
 
 PILLARS = [
     "computing-in-memory", "event-driven spiking",
@@ -258,7 +264,7 @@ class LiveMetaClient:
                 "content": f"Domain: {domain_repo}\nCandidate fact: {fact}",
             },
         ]
-        content, error = self._post_chat(messages, max_tokens=256)
+        content, error = self._post_chat(messages, max_tokens=DEFAULT_MAX_TOKENS)
         if error is not None:
             return {**error, "verdict": "error", "pillar_failures": []}
         stripped = content.strip()
@@ -323,7 +329,7 @@ class LiveMetaClient:
             },
             {"role": "user", "content": scrubbed["scrubbed_text"]},
         ]
-        content, error = self._post_chat(messages, max_tokens=256)
+        content, error = self._post_chat(messages, max_tokens=DEFAULT_MAX_TOKENS)
         if error is not None:
             return {**error, "compressed": ""}
         return {
