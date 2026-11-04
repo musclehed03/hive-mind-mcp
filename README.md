@@ -6,6 +6,15 @@ that every client and sub-bot shares, so nothing ever has to be restated —
 facts are captured once, verified against provenance, and recalled as
 ultra-compressed payloads.
 
+
+## Demo
+
+3-minute demo video (3:07): an 11-second lead-in with title and "Has this ever happened to you?" scenario cards, then the autopilot terminal run and the GUI demo, narrated, with captions burned in.
+
+Watch it on Rumble: [Hive-Mind — Your AI Finally Remembers: 3-minute demo](https://rumble.com/v7hueg0-hive-mind-your-ai-finally-remembers-never-restate-yourself-hive-mind-mcp-de.html)
+
+The video is hosted on Rumble. Captions are burned into the picture; the caption sidecar is in `demo/hive-mind-demo-3min-v2.srt`, and `demo/embed-snippet.html` holds the Rumble embed code for a real webpage (GitHub strips iframes in rendered markdown).
+
 **Status:** Blocks 1–17 built, full suite green (247 tests), and the
 live gates verified Nov 1, 2026 (see "Live gates — VERIFIED" below).
 The approved master lock-in spec is the source of truth: see
