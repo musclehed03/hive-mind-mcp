@@ -13,7 +13,7 @@
    R == G == B) by design. Objects are written as strict JSON so
    tests can parse them. */
 const HIVEMIND_PALETTES = {
-  "default": {"label": "Default (Deluxe Posh, Variant A)", "background": "#080609", "text": "#ddd3d7", "accent": "#ad3375", "border": "#241d23", "node": "#120d11", "edge": "#547c6d", "metal": "#a8891f", "grayscale": false},
+  "default": {"label": "Default (Deluxe Posh, Variant A)", "background": "#000000", "text": "#ddd3d7", "accent": "#ad3375", "border": "#241d23", "node": "#120d11", "edge": "#547c6d", "metal": "#a8891f", "grayscale": false},
   "deuteranomaly": {"label": "Deuteranomaly", "background": "#101418", "text": "#f2f2f2", "accent": "#e69f00", "border": "#4a4a4a", "node": "#1c242c", "edge": "#56b4e9", "grayscale": false},
   "protanomaly": {"label": "Protanomaly", "background": "#101418", "text": "#f2f2f2", "accent": "#009e73", "border": "#4a4a4a", "node": "#1c242c", "edge": "#e69f00", "grayscale": false},
   "deuteranopia": {"label": "Deuteranopia", "background": "#0f1216", "text": "#ffffff", "accent": "#e69f00", "border": "#5a5a5a", "node": "#1a2028", "edge": "#56b4e9", "grayscale": false},

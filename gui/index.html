@@ -12,7 +12,7 @@
 <header>
   <img src="logo.svg" alt="Hive-Mind logo: a house-shaped star" width="48" height="48">
   <div class="header-text">
-    <h1>Hive-Mind</h1>
+    <h1 class="glow-auto">Hive-Mind</h1>
     <p class="tagline">One memory layer every client shares. Nothing ever has to be restated.</p>
     <p class="status distraction"><strong>Live gates verified Nov 1, 2026:</strong> real Muse Spark cross-hatch checks and a real Supabase snapshot backup, both confirmed on Sonja's machine.</p>
   </div>
@@ -20,7 +20,7 @@
 
 <main>
   <section aria-label="Knowledge graph">
-    <h2>Knowledge graph</h2>
+    <h2 class="glow-auto">Knowledge graph</h2>
     <div class="demo-controls" aria-label="Demo playback">
       <button id="demo-play" type="button" aria-label="Play the guided demo" data-tooltip="Play a guided tour: the page walks through the demo steps by itself. Press again to pause. Space pauses too, Escape stops.">Play demo</button>
       <button id="demo-stop" type="button" aria-label="Stop the guided demo" data-tooltip="Stop the guided tour and put all your settings back as they were.">Stop demo</button>
@@ -40,13 +40,13 @@
       <canvas id="graph-canvas" role="img" aria-label="Knowledge graph canvas: nodes are drawn as circles, squares, and triangles by domain, with solid, dashed, and dotted lines for relationships. A text list of all nodes follows."></canvas>
       <svg class="graph" id="graph-svg" role="img" aria-label="Knowledge graph, alternate view" style="display:none"><title>Knowledge graph, alternate view</title><g id="svg-nodes"></g></svg>
     </div>
-    <p id="growth-stage" aria-live="polite" data-tooltip="How grown your memory sky is. More memories, and more checked facts, make it brighter.">Growth stage: Nebula — a young cloud, still gathering.</p>
-    <div id="exp-meter" aria-live="polite" data-tooltip="Points you earn for keeping your memories healthy: checked facts, settled mix-ups, and backups. Points never cost money and never buy anything.">EXP: 0</div>
+    <p id="growth-stage" aria-live="polite" data-tooltip="How grown your memory sky is. More memories, and more checked facts, make it brighter." class="glow-auto">Growth stage: Nebula — a young cloud, still gathering.</p>
+    <div id="exp-meter" aria-live="polite" data-tooltip="Points you earn for keeping your memories healthy: checked facts, settled mix-ups, and backups. Points never cost money and never buy anything." class="glow-auto">EXP: 0</div>
     <p id="graph-status" aria-live="polite">Loading graph data…</p>
-    <h3>Origins</h3>
+    <h3 class="glow-auto">Origins</h3>
     <p>Who made each memory — a model, an app, or you. Every origin has its own ring colour and ring pattern, so origins stay apart even in grayscale.</p>
     <ul id="origin-legend" class="origin-legend" aria-label="Memory origins, with counts"></ul>
-    <h3>All memories, as text</h3>
+    <h3 class="glow-auto">All memories, as text</h3>
     <ul id="node-list" class="node-list" aria-label="All memories in the graph"></ul>
     <div id="token-meter" aria-live="polite">Token Ekonomi Meter: no query yet.</div>
     <div id="diff-toast" aria-live="polite">No changes yet. A superseded fact will appear here as: - old fact / + new fact [Attested].</div>
@@ -58,7 +58,7 @@
   </section>
 
   <section class="accessibility" id="accessibility-suite" aria-label="Accessibility Suite">
-    <h2>Accessibility Suite</h2>
+    <h2 class="glow-auto">Accessibility Suite</h2>
     <p>One-tap profiles first; finer controls underneath. Profiles never lock you out of the individual controls.</p>
     <div role="group" aria-label="One-tap accessibility profiles">
       <button type="button" class="profile-button" data-profile="dyslexia" aria-pressed="false" aria-label="Dyslexia profile" data-tooltip="One tap: easier reading font, more space, and fewer distractions.">Dyslexia</button>
@@ -67,7 +67,7 @@
       <button type="button" class="profile-button" data-profile="seizure_safe" aria-pressed="false" aria-label="Seizure safe profile" data-tooltip="One tap: stop movement, soften colours, and hide distractions.">Seizure Safe</button>
       <button type="button" class="profile-button" id="profile-achromatopsia" data-profile="achromatopsia" aria-pressed="false" aria-label="Achromatopsia profile, pure grayscale" data-tooltip="One tap: shades of grey only, with black text on a white background.">Achromatopsia</button>
     </div>
-    <h3>Sensory Suite toggles</h3>
+    <h3 class="glow-auto">Sensory Suite toggles</h3>
     <button type="button" id="toggle-focus" aria-pressed="false" aria-label="Focus Mode: hide distractions" data-tooltip="Hide extra notes so you can focus on your memories.">Focus Mode</button>
     <button type="button" id="toggle-motion" aria-pressed="false" aria-label="Safe Motion: stop animations" data-tooltip="Stop movement and animation on this page.">Safe Motion</button>
     <button type="button" id="toggle-font" aria-pressed="false" aria-label="Readable Font" data-tooltip="Use a font that is easier to read.">Readable Font</button>
@@ -90,7 +90,7 @@
       <option value="tritanopia">Tritanopia</option>
       <option value="achromatopsia">Achromatopsia (pure grayscale)</option>
     </select>
-    <h3>Text and spacing</h3>
+    <h3 class="glow-auto">Text and spacing</h3>
     <label for="text-size">Text size: <span id="text-size-value">100%</span></label>
     <input id="text-size" type="range" min="80" max="200" step="5" value="100" aria-label="Text size, 80 to 200 percent" data-tooltip="Make the words bigger or smaller.">
     <label for="line-spacing">Line spacing: <span id="line-spacing-value">1.5</span></label>
@@ -103,7 +103,7 @@
   </section>
 
   <section class="regular" id="regular-settings" aria-label="Regular settings">
-    <h2>Regular Settings</h2>
+    <h2 class="glow-auto">Regular Settings</h2>
     <p>These are product preferences, not access needs. They live here, not in the Accessibility Suite.</p>
     <label for="graph-density">Graph density:</label>
     <select id="graph-density" aria-label="Graph density: sparse, balanced, or dense" data-tooltip="Choose how many memories to show at once: few, a balanced amount, or many.">
@@ -143,14 +143,14 @@
     <button type="button" id="toggle-sound" aria-pressed="false" aria-label="Sound effects on or off" data-tooltip="Turn sounds on or off.">Sound: off</button>
     <button type="button" id="toggle-notifications" aria-pressed="false" aria-label="Notifications on or off" data-tooltip="Turn pop-up messages on or off.">Notifications: off</button>
     <button type="button" id="toggle-tooltips" aria-pressed="true" aria-label="Tooltips on or off" data-tooltip="Turn the quick helper tips on or off. When they are off, no tips pop up.">Tooltips: on</button>
-    <h3>Origin colours</h3>
+    <h3 class="glow-auto">Origin colours</h3>
     <p>Give each origin its own ring colour on the map. The ring pattern and the Origins list always say which origin is which, even in grayscale, so colour is never the only clue. Colours are saved on this device only, and the accessibility reset does not change them.</p>
     <div id="origin-colours"></div>
     <button type="button" id="reset-origin-colours" aria-label="Reset origin colours to defaults" data-tooltip="Put every origin ring colour back to its starting colour.">Reset origin colours</button>
   </section>
 
   <section class="regular integrations" id="integrations" aria-label="Integrations">
-    <h2>Integrations</h2>
+    <h2 class="glow-auto">Integrations</h2>
     <p>Connect Hive-Mind to the apps and models you use. This box only shows what is connected. It never asks for a key.</p>
     <p><strong>Keys are never typed here.</strong> Keys live in the <code>.env</code> file in the Hive-Mind folder, edited with <code>nano</code> in the terminal. Never paste a key in chat, and never type one on this page.</p>
     <ul class="integration-rows">
@@ -182,13 +182,13 @@
         <span class="integration-status status-local" id="status-exp">Local only</span>
       </li>
     </ul>
-    <h3>Connect Codex (copy, paste, fix the one path)</h3>
+    <h3 class="glow-auto">Connect Codex (copy, paste, fix the one path)</h3>
     <pre class="integration-snippet"><code id="codex-config-snippet">[mcp_servers.hive-mind]
 command = "python"
 args = ["-m", "app.mcp_server"]
 cwd = "ABSOLUTE_PATH_TO_HIVE_MIND_MCP"</code></pre>
     <button type="button" id="copy-config" data-copy="config" aria-label="Copy the Codex setup text" data-tooltip="Copy the setup text for Codex. Paste it into the Codex settings file, and change the folder path to your Hive-Mind folder.">Copy Codex setup</button>
-    <h3>What you need, and where to find it</h3>
+    <h3 class="glow-auto">What you need, and where to find it</h3>
     <ol class="integration-steps">
       <li>Keys live in one file: <code>.env</code>, in the Hive-Mind folder. Open it in the terminal with <code>nano .env</code>. Never paste a key in chat, and never type one on this page.</li>
       <li>Meta model: get your key at <code>dev.meta.ai</code>, under API Keys. Check Billing there too, so you know your free credits. Put the key in <code>.env</code> as <code>META_API_KEY</code>.</li>
@@ -200,7 +200,7 @@ cwd = "ABSOLUTE_PATH_TO_HIVE_MIND_MCP"</code></pre>
   </section>
 
   <section id="plain-language-guide" aria-label="Plain-language guide">
-    <h2>Plain-language guide</h2>
+    <h2 class="glow-auto">Plain-language guide</h2>
     <p>Every button and box on this page has a short, plain-words tip. Hold your pointer over a button or box for half a second to read its tip. You can turn tips off in Regular Settings.</p>
     <ul>
       <li>A memory is one thing you asked Hive-Mind to remember, like "The shop opens at 9am."</li>

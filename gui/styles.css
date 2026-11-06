@@ -9,7 +9,7 @@
    is the brushed-gold mid stop, used ONLY for the 1px pinstripe
    on the header, per the PR #4 direction (metal sparingly). */
 :root {
-  --bg: #080609; --text: #ddd3d7; --accent: #ad3375; --border: #241d23;
+  --bg: #000000; --text: #ddd3d7; --accent: #ad3375; --border: #241d23;
   --node: #120d11; --edge: #547c6d; --metal: #a8891f;
   --font-scale: 1; --line-height: 1.5; --letter-spacing: 0.02em;
   --saturation: 100%;
@@ -25,7 +25,7 @@ body {
 /* Variant A light tokens (same canonical PR #4 file): the light
    theme keeps the darkened-orchid primary and dark-teal secondary,
    on the light ground. --node is the light card. */
-body.light-theme { --bg: #dcd2d5; --text: #211820; --accent: #7c254f; --border: #32262d; --node: #ece5e7; --edge: #1f483f; --metal: #a8891f; }
+body.light-theme { --bg: #ffffff; --text: #211820; --accent: #7c254f; --border: #32262d; --node: #ece5e7; --edge: #1f483f; --metal: #a8891f; }
 body.high-contrast { --bg: #000000; --text: #ffffff; --accent: #ffd400; --border: #ffffff; --edge: #ffffff; }
 body.readable-font { font-family: "Atkinson Hyperlegible", Verdana, sans-serif; }
 body.bold-text { font-weight: 700; }
@@ -69,7 +69,7 @@ header {
   border: 2px solid var(--border); border-bottom: 3px solid var(--accent);
   border-top: 1px solid var(--metal);
   border-radius: var(--radius);
-  background: linear-gradient(135deg, #120d11 0%, #080609 60%);
+  background: linear-gradient(135deg, var(--node) 0%, var(--bg) 60%);
 }
 header img { flex: 0 0 auto; }
 header .header-text { flex: 1 1 320px; }
@@ -199,3 +199,83 @@ input[type="color"] { width: 44px; height: 32px; padding: 2px; border: 2px solid
   .node-list { columns: 1; }
 }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+/* PINSTRIPE GLOW SOP - SHIFT-INSIDE - Sonja Kelley.
+   No outer outline, no blur, no fuzz. The gradient is clipped
+   INSIDE the letterforms (background-clip:text): circular 360
+   falloff, light source EAST / sunrise (upper-right 45deg),
+   gleam upper-right pulled in off the edges, shadow lower-left
+   west opposite. Stepped bands behind the gleam: gleam, lighter
+   tint, mid, darker, darkest. Band counts are ODD only: s5 small
+   text/icons, s7-s9 standard effects, s9 vivid, s11-s13 large
+   display. Fixed classes keep specimen-exact stops; .glow-auto
+   derives stops from currentColor (palette-safe). Brushed Gold
+   omitted: metal is 1px pinstripe only (test_metal_is_only). */
+/* Neon Pink #FF1E89 - gleam to deep: #FF1E89 #f71d84 #e91a7c #c71668 #a31356 */
+.glow-neon-pink{color:#FF1E89;--gg:#FF1E89;--gt:#f71d84;--gm:#e91a7c;--gd:#c71668;--gp:#a31356;}
+/* Cyan #00E5FF - gleam to deep: #00E5FF #00d8f0 #00c2dc #0097ad #00707e */
+.glow-cyan{color:#00E5FF;--gg:#00E5FF;--gt:#00d8f0;--gm:#00c2dc;--gd:#0097ad;--gp:#00707e;}
+/* True Black #000000 - gleam to deep: #666666 #4d4d4d #333333 #1a1a1a #000000 */
+.glow-true-black{color:#000000;--gg:#666666;--gt:#4d4d4d;--gm:#333333;--gd:#1a1a1a;--gp:#000000;}
+/* Charcoal #121212 - gleam to deep: #737373 #595959 #404040 #2a2a2a #121212 */
+.glow-charcoal{color:#121212;--gg:#737373;--gt:#595959;--gm:#404040;--gd:#2a2a2a;--gp:#121212;}
+/* White #FFFFFF - gleam to deep: #ffffff #f8f8ff #fffff0 #ecece0 #d9d9c8 */
+.glow-white{color:#FFFFFF;--gg:#ffffff;--gt:#f8f8ff;--gm:#fffff0;--gd:#ecece0;--gp:#d9d9c8;}
+/* Orchid Pink Dark #AD3375 - gleam to deep: #ad3375 #9c2e6b #86295c #6b1f47 #4a1430 */
+.glow-orchid-pink-dark{color:#AD3375;--gg:#ad3375;--gt:#9c2e6b;--gm:#86295c;--gd:#6b1f47;--gp:#4a1430;}
+/* Orchid Pink Light #7C254F - gleam to deep: #7c254f #6e2247 #5f1d3d #47162e #2e0e1e */
+.glow-orchid-pink-light{color:#7C254F;--gg:#7c254f;--gt:#6e2247;--gm:#5f1d3d;--gd:#47162e;--gp:#2e0e1e;}
+/* Teal-Green Dark #547C6D - gleam to deep: #547c6d #4d7262 #426355 #324f42 #24382f */
+.glow-teal-green-dark{color:#547C6D;--gg:#547c6d;--gt:#4d7262;--gm:#426355;--gd:#324f42;--gp:#24382f;}
+/* Teal-Green Light #1F483F - gleam to deep: #1f483f #1d423a #183b33 #122e28 #0a1f1a */
+.glow-teal-green-light{color:#1F483F;--gg:#1f483f;--gt:#1d423a;--gm:#183b33;--gd:#122e28;--gp:#0a1f1a;}
+/* Posh B Dark #952A4E - gleam to deep: #952a4e #8a2749 #7d2242 #641b35 #4a1427 */
+.glow-posh-b-dark{color:#952A4E;--gg:#952a4e;--gt:#8a2749;--gm:#7d2242;--gd:#641b35;--gp:#4a1427;}
+/* Posh B Light #6D1F40 - gleam to deep: #6d1f40 #641d3b #5a1a35 #47142a #2e0c1a */
+.glow-posh-b-light{color:#6D1F40;--gg:#6d1f40;--gt:#641d3b;--gm:#5a1a35;--gd:#47142a;--gp:#2e0c1a;}
+/* Posh C Dark #842B45 - gleam to deep: #842b45 #792841 #6e233a #571c2f #3d1320 */
+.glow-posh-c-dark{color:#842B45;--gg:#842b45;--gt:#792841;--gm:#6e233a;--gd:#571c2f;--gp:#3d1320;}
+/* Posh C Light #5F1A34 - gleam to deep: #5f1a34 #57182f #4f152a #3d101f #260a15 */
+.glow-posh-c-light{color:#5F1A34;--gg:#5f1a34;--gt:#57182f;--gm:#4f152a;--gd:#3d101f;--gp:#260a15;}
+/* Posh D Dark #701F36 - gleam to deep: #701f36 #671c32 #5d192e #481324 #320d18 */
+.glow-posh-d-dark{color:#701F36;--gg:#701f36;--gt:#671c32;--gm:#5d192e;--gd:#481324;--gp:#320d18;}
+/* Posh D Light #52162B - gleam to deep: #52162b #4b1327 #441124 #350d1d #220812 */
+.glow-posh-d-light{color:#52162B;--gg:#52162b;--gt:#4b1327;--gm:#441124;--gd:#350d1d;--gp:#220812;}
+/* Trevor Orange Lemon Outline #FF8200 - gleam to deep: #FFEA00 #edd600 #d9c400 #b8a600 #8a7d00 */
+.glow-trevor-orange-lemon-outline{color:#FF8200;--gg:#FFEA00;--gt:#edd600;--gm:#d9c400;--gd:#b8a600;--gp:#8a7d00;}
+/* Lemon-Yellow Outline #FFEA00 - gleam to deep: #FFEA00 #edd600 #d9c400 #b8a600 #8a7d00 */
+.glow-lemon-yellow-outline{color:#FFEA00;--gg:#FFEA00;--gt:#edd600;--gm:#d9c400;--gd:#b8a600;--gp:#8a7d00;}
+/* Medium Gray #808080 - gleam to deep: #808080 #737373 #666666 #4d4d4d #333333 */
+.glow-medium-gray{color:#808080;--gg:#808080;--gt:#737373;--gm:#666666;--gd:#4d4d4d;--gp:#333333;}
+/* Light Gray #D3D3D3 - gleam to deep: #d3d3d3 #bfbfbf #a6a6a6 #8c8c8c #737373 */
+.glow-light-gray{color:#D3D3D3;--gg:#d3d3d3;--gt:#bfbfbf;--gm:#a6a6a6;--gd:#8c8c8c;--gp:#737373;}
+/* Amber (deuteranomaly accent) #E69F00 - gleam to deep: #e69f00 #da9700 #ca8c00 #af7900 #936600 */
+.glow-amber{color:#E69F00;--gg:#e69f00;--gt:#da9700;--gm:#ca8c00;--gd:#af7900;--gp:#936600;}
+/* Sky Blue (deuteranopia edge) #56B4E9 - gleam to deep: #56b4e9 #52abdd #4c9ecd #4189b1 #377395 */
+.glow-sky-blue{color:#56B4E9;--gg:#56b4e9;--gt:#52abdd;--gm:#4c9ecd;--gd:#4189b1;--gp:#377395;}
+/* Okabe-Ito Green (protanomaly accent) #009E73 - gleam to deep: #009e73 #00966d #008b65 #007857 #00654a */
+.glow-okabe-green{color:#009E73;--gg:#009e73;--gt:#00966d;--gm:#008b65;--gd:#007857;--gp:#00654a;}
+/* Deep Blue (protanopia edge) #0072B2 - gleam to deep: #0072b2 #006ca9 #00649d #005787 #004972 */
+.glow-deep-blue{color:#0072B2;--gg:#0072b2;--gt:#006ca9;--gm:#00649d;--gd:#005787;--gp:#004972;}
+/* Vermillion (tritanomaly accent) #D55E00 - gleam to deep: #d55e00 #ca5900 #bb5300 #a24700 #883c00 */
+.glow-vermillion{color:#D55E00;--gg:#d55e00;--gt:#ca5900;--gm:#bb5300;--gd:#a24700;--gp:#883c00;}
+/* Mauve (tritanopia edge) #CC79A7 - gleam to deep: #cc79a7 #c2739f #b46a93 #9b5c7f #834d6b */
+.glow-mauve{color:#CC79A7;--gg:#cc79a7;--gt:#c2739f;--gm:#b46a93;--gd:#9b5c7f;--gp:#834d6b;}
+/* Near White (typed-palette text) #F2F2F2 - gleam to deep: #f2f2f2 #e6e6e6 #d5d5d5 #b8b8b8 #9b9b9b */
+.glow-near-white{color:#F2F2F2;--gg:#f2f2f2;--gt:#e6e6e6;--gm:#d5d5d5;--gd:#b8b8b8;--gp:#9b9b9b;}
+/* Lavender White (tritan text) #F5EDF7 - gleam to deep: #f5edf7 #e9e1eb #d8d1d9 #bab4bc #9d989e */
+.glow-lavender-white{color:#F5EDF7;--gg:#f5edf7;--gt:#e9e1eb;--gm:#d8d1d9;--gd:#bab4bc;--gp:#9d989e;}
+/* Contrast Yellow (high-contrast accent) #FFD400 - gleam to deep: #ffd400 #f2c900 #e0bb00 #c2a100 #a38800 */
+.glow-contrast-yellow{color:#FFD400;--gg:#ffd400;--gt:#f2c900;--gm:#e0bb00;--gd:#c2a100;--gp:#a38800;}
+/* Hive-Mind Default Text #DDD3D7 - gleam to deep: #ddd3d7 #d2c8cc #c2babd #a8a0a3 #8d878a */
+.glow-hive-text{color:#DDD3D7;--gg:#ddd3d7;--gt:#d2c8cc;--gm:#c2babd;--gd:#a8a0a3;--gp:#8d878a;}
+/* .glow-pink is the brief's name for Neon Pink. */
+.glow-pink{color:#FF1E89;--gg:#FF1E89;--gt:#f71d84;--gm:#e91a7c;--gd:#c71668;--gp:#a31356;}
+/* Palette-following pinstripe: same parameters, stops from currentColor. */
+.glow-auto{--gg:color-mix(in srgb, currentColor 62%, white);--gt:color-mix(in srgb, currentColor 82%, white);--gm:currentColor;--gd:color-mix(in srgb, currentColor 78%, black);--gp:color-mix(in srgb, currentColor 58%, black);}
+@supports (background-clip:text) or (-webkit-background-clip:text){
+.glow-neon-pink,.glow-cyan,.glow-true-black,.glow-charcoal,.glow-white,.glow-orchid-pink-dark,.glow-orchid-pink-light,.glow-teal-green-dark,.glow-teal-green-light,.glow-posh-b-dark,.glow-posh-b-light,.glow-posh-c-dark,.glow-posh-c-light,.glow-posh-d-dark,.glow-posh-d-light,.glow-trevor-orange-lemon-outline,.glow-lemon-yellow-outline,.glow-medium-gray,.glow-light-gray,.glow-amber,.glow-sky-blue,.glow-okabe-green,.glow-deep-blue,.glow-vermillion,.glow-mauve,.glow-near-white,.glow-lavender-white,.glow-contrast-yellow,.glow-hive-text,.glow-pink,.glow-auto{background:radial-gradient(circle at 72% 26%, var(--gg) 0% 20%, var(--gt) 20% 40%, var(--gm) 40% 60%, var(--gd) 60% 80%, var(--gp) 80% 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.glow-s7{background:radial-gradient(circle at 72% 26%, var(--gg) 0% 14.29%, color-mix(in srgb, var(--gg) 66%, var(--gt)) 14.29% 28.57%, var(--gt) 28.57% 42.86%, var(--gm) 42.86% 57.14%, color-mix(in srgb, var(--gm) 66%, var(--gd)) 57.14% 71.43%, var(--gd) 71.43% 85.71%, var(--gp) 85.71% 100%);}
+.glow-s9{background:radial-gradient(circle at 72% 26%, var(--gg) 0% 11.11%, color-mix(in srgb, var(--gg) 66%, var(--gt)) 11.11% 22.22%, var(--gt) 22.22% 33.33%, color-mix(in srgb, var(--gt) 66%, var(--gm)) 33.33% 44.44%, var(--gm) 44.44% 55.56%, color-mix(in srgb, var(--gm) 66%, var(--gd)) 55.56% 66.67%, var(--gd) 66.67% 77.78%, color-mix(in srgb, var(--gd) 66%, var(--gp)) 77.78% 88.89%, var(--gp) 88.89% 100%);}
+.glow-s11{background:radial-gradient(circle at 72% 26%, var(--gg) 0% 9.09%, color-mix(in srgb, var(--gg) 75%, var(--gt)) 9.09% 18.18%, color-mix(in srgb, var(--gg) 25%, var(--gt)) 18.18% 27.27%, var(--gt) 27.27% 36.36%, color-mix(in srgb, var(--gt) 75%, var(--gm)) 36.36% 45.45%, color-mix(in srgb, var(--gt) 25%, var(--gm)) 45.45% 54.55%, var(--gm) 54.55% 63.64%, color-mix(in srgb, var(--gm) 50%, var(--gd)) 63.64% 72.73%, var(--gd) 72.73% 81.82%, color-mix(in srgb, var(--gd) 50%, var(--gp)) 81.82% 90.91%, var(--gp) 90.91% 100%);}
+.glow-s13{background:radial-gradient(circle at 72% 26%, var(--gg) 0% 7.69%, color-mix(in srgb, var(--gg) 75%, var(--gt)) 7.69% 15.38%, color-mix(in srgb, var(--gg) 25%, var(--gt)) 15.38% 23.08%, var(--gt) 23.08% 30.77%, color-mix(in srgb, var(--gt) 75%, var(--gm)) 30.77% 38.46%, color-mix(in srgb, var(--gt) 25%, var(--gm)) 38.46% 46.15%, var(--gm) 46.15% 53.85%, color-mix(in srgb, var(--gm) 75%, var(--gd)) 53.85% 61.54%, color-mix(in srgb, var(--gm) 25%, var(--gd)) 61.54% 69.23%, var(--gd) 69.23% 76.92%, color-mix(in srgb, var(--gd) 66%, var(--gp)) 76.92% 84.62%, color-mix(in srgb, var(--gd) 33%, var(--gp)) 84.62% 92.31%, var(--gp) 92.31% 100%);}
+}

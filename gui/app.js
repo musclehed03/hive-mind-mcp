@@ -660,7 +660,7 @@
          what shows through it. */
       var styles = getComputedStyle(document.body);
       ctx.clearRect(0, 0, dims.width, dims.height);
-      ctx.fillStyle = styles.getPropertyValue("--bg").trim() || "#080609";
+      ctx.fillStyle = styles.getPropertyValue("--bg").trim() || "#000000";
       ctx.fillRect(0, 0, dims.width, dims.height);
       /* Faint dust behind the nodes: deterministic positions from a
          hash of the index (no Math.random, so the picture is stable
@@ -731,6 +731,45 @@
           ctx.fillStyle = styles.getPropertyValue("--text").trim() || "#ddd3d7";
           ctx.font = "12px sans-serif";
           ctx.textBaseline = "middle";
+          /* Pinstripe-inside canvas labels (SOP shift-inside, East light):
+             CSS cannot reach canvas fillText, so the equivalent lives
+             here: a lower-left to upper-right linear gradient in 5
+             stepped bands (odd), built ONLY from the palette's own
+             text + background colours - never a foreign colour, so it
+             stays grayscale-safe under achromatopsia. Shadow sits
+             lower-left, full ink upper-right. */
+          function toHex6(c) {
+            c = (c || "").trim();
+            var m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(c);
+            if (m) { var h = m[1]; if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2]; return "#" + h.toLowerCase(); }
+            m = /^rgba?\(([^)]+)\)/i.exec(c);
+            if (m) { var p = m[1].split(","); return "#" + [0, 1, 2].map(function (i) { var v = Math.max(0, Math.min(255, Math.round(parseFloat(p[i])))); return ("0" + v.toString(16)).slice(-2); }).join(""); }
+            return "#dddddd";
+          }
+          function mixHex6(a, b, f) {
+            var A = toHex6(a), B = toHex6(b), out = "#";
+            for (var i = 1; i < 7; i += 2) {
+              var av = parseInt(A.substr(i, 2), 16), bv = parseInt(B.substr(i, 2), 16);
+              out += ("0" + Math.round(av * f + bv * (1 - f)).toString(16)).slice(-2);
+            }
+            return out;
+          }
+          function paintLabelText(text, x, y, align) {
+            var ink = styles.getPropertyValue("--text").trim() || "#ddd3d7";
+            var paper = styles.getPropertyValue("--bg").trim() || "#000000";
+            var w = ctx.measureText(text).width;
+            var lx = align === "right" ? x - w : x;
+            var g = ctx.createLinearGradient(lx, y + 6, lx + w, y - 6);
+            var deep = mixHex6(ink, paper, 0.55), dark = mixHex6(ink, paper, 0.72),
+              mid = mixHex6(ink, paper, 0.88), tint = mixHex6(ink, paper, 0.96);
+            g.addColorStop(0, deep); g.addColorStop(0.25, deep);
+            g.addColorStop(0.25, dark); g.addColorStop(0.45, dark);
+            g.addColorStop(0.45, mid); g.addColorStop(0.6, mid);
+            g.addColorStop(0.6, tint); g.addColorStop(0.8, tint);
+            g.addColorStop(0.8, ink); g.addColorStop(1, ink);
+            ctx.fillStyle = g;
+            ctx.fillText(text, x, y);
+          }
           if (graphApi && graphApi.placeLabel && group.label) {
             var geo = graphApi.labelGeometry(pos, dims.width, nodeSize);
             var placed = graphApi.placeLabel(geo, group.label, pos.y,
@@ -739,7 +778,7 @@
             if (placed) {
               placedLabels.push(placed.box);
               ctx.textAlign = geo.textAlign;
-              ctx.fillText(placed.text, placed.x, placed.y);
+              paintLabelText(placed.text, placed.x, placed.y, geo.textAlign);
               ctx.textAlign = "left";
             }
           } else if (graphApi && graphApi.keywordLabel) {
@@ -753,7 +792,7 @@
                 var fitted = graphApi.fitLabel(keyword, room, function (t) { return ctx.measureText(t).width; });
                 if (fitted) {
                   ctx.textAlign = geo2.textAlign;
-                  ctx.fillText(fitted, geo2.x, pos.y);
+                  paintLabelText(fitted, geo2.x, pos.y, geo2.textAlign);
                   ctx.textAlign = "left";
                 }
               }

@@ -361,7 +361,7 @@ def test_legend_present_in_html_with_counts_and_no_title_attrs():
     html = _read("gui/index.html")
     assert '<ul id="origin-legend" class="origin-legend" ' \
         'aria-label="Memory origins, with counts"></ul>' in html
-    assert "<h3>Origins</h3>" in html
+    assert '<h3 class="glow-auto">Origins</h3>' in html
     # The legend sits in the graph section, before the text list.
     assert html.index('id="origin-legend"') < html.index('id="node-list"')
     # Fast-tooltips SOP: zero title attributes anywhere in the GUI.
@@ -375,7 +375,7 @@ def test_origin_colours_group_is_regular_settings_not_accessibility():
     integrations_start = html.index('id="integrations"')
     group = html.index('id="origin-colours"')
     assert regular_start < group < integrations_start
-    assert '<h3>Origin colours</h3>' in html
+    assert '<h3 class="glow-auto">Origin colours</h3>' in html
     assert 'id="reset-origin-colours"' in html
     # No colour input inside the Accessibility Suite section.
     suite_start = html.index('id="accessibility-suite"')
