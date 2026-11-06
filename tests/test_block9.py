@@ -42,14 +42,16 @@ def _css_vars(css, selector):
     return out
 
 
+# Sonja 2026-11-06: dark base moved to True Black, light theme to
+# actual white. Variant A hues (accent/edge/metal/text) unchanged.
 VARIANT_A_DARK = {
-    "background": "#080609", "text": "#ddd3d7", "accent": "#ad3375",
+    "background": "#000000", "text": "#ddd3d7", "accent": "#ad3375",
     "border": "#241d23", "node": "#120d11", "edge": "#547c6d",
     "metal": "#a8891f",
 }
 
 VARIANT_A_LIGHT = {
-    "--bg": "#dcd2d5", "--text": "#211820", "--accent": "#7c254f",
+    "--bg": "#ffffff", "--text": "#211820", "--accent": "#7c254f",
     "--border": "#32262d", "--node": "#ece5e7", "--edge": "#1f483f",
 }
 
@@ -65,7 +67,7 @@ def test_default_palette_is_variant_a_dark():
 def test_css_root_defaults_match_variant_a_dark():
     css = _read("styles.css")
     root = _css_vars(css, ":root")
-    assert root["--bg"] == "#080609"
+    assert root["--bg"] == "#000000"  # True Black base, Sonja 2026-11-06
     assert root["--text"] == "#ddd3d7"
     assert root["--accent"] == "#ad3375"
     assert root["--border"] == "#241d23"
